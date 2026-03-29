@@ -27,9 +27,5 @@ define('BASE_PATH', dirname(__DIR__));
 // Autoloader
 require BASE_PATH . '/vendor/autoload.php';
 
-// Bootstrap the application
-// $app = require BASE_PATH . '/bootstrap/app.php';
-// $app->run();
-
-// Placeholder — remove once bootstrap is implemented
-echo 'Socius is not yet installed. Please visit /install to begin setup.';
+// Bootstrap and run the application
+(new \Socius\Core\Application(BASE_PATH))->run();
