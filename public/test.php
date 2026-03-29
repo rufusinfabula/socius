@@ -247,6 +247,86 @@ try {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// 6. Database Schema
+// ─────────────────────────────────────────────────────────────────────────────
+
+section('Database Schema');
+
+$tables = [
+    'settings',
+    'roles',
+    'users',
+    'membership_categories',
+    'members',
+    'memberships',
+    'payment_requests',
+    'payments',
+    'renewal_campaigns',
+    'renewal_reminders',
+    'communications',
+    'communication_recipients',
+    'events',
+    'event_registrations',
+    'assemblies',
+    'assembly_attendees',
+    'assembly_delegates',
+    'minutes',
+    'gdpr_consents',
+    'audit_logs',
+    'imports',
+];
+
+try {
+    $db = Database::getInstance();
+    $allOk = true;
+
+    foreach ($tables as $table) {
+        try {
+            $row   = $db->fetch("SELECT COUNT(*) AS cnt FROM `{$table}`");
+            $count = (int) ($row['cnt'] ?? 0);
+            echo sprintf("[PASS] %-30s %d rows\n", $table, $count);
+        } catch (\Throwable $e) {
+            echo sprintf("[FAIL] %-30s %s\n", $table, $e->getMessage());
+            $allOk = false;
+        }
+    }
+
+    if ($allOk) {
+        ok('All 21 tables exist');
+    } else {
+        fail('Schema check', 'one or more tables are missing — run 001_initial_schema.sql');
+    }
+
+    // Seed verification
+    echo "\n--- Seed data ---\n";
+
+    $roles = $db->fetchAll('SELECT id, name, label FROM `roles` ORDER BY id');
+    if (count($roles) > 0) {
+        foreach ($roles as $r) {
+            echo sprintf("  role #%d  %-15s %s\n", $r['id'], $r['name'], $r['label']);
+        }
+        ok(count($roles) . ' roles found');
+    } else {
+        fail('roles seed', 'table is empty — re-run the migration seed');
+    }
+
+    $settingsCount = (int) ($db->fetch('SELECT COUNT(*) AS cnt FROM `settings`')['cnt'] ?? 0);
+    $groups        = $db->fetchAll('SELECT `group`, COUNT(*) AS cnt FROM `settings` GROUP BY `group` ORDER BY `group`');
+    if ($settingsCount > 0) {
+        foreach ($groups as $g) {
+            echo sprintf("  settings[%-12s] %d entries\n", $g['group'], $g['cnt']);
+        }
+        ok("{$settingsCount} settings found across " . count($groups) . ' groups');
+    } else {
+        fail('settings seed', 'table is empty — re-run the migration seed');
+    }
+
+} catch (\Throwable $e) {
+    fail('Database Schema', 'cannot connect — ' . $e->getMessage());
+    echo "       (check DB_* variables in .env)\n";
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Done
 // ─────────────────────────────────────────────────────────────────────────────
 
