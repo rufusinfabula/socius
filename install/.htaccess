@@ -1,0 +1,5 @@
+# Block access to the install directory once installation is complete.
+# The application will also check for install.lock at runtime.
+<Files "install.lock">
+    Require all denied
+</Files>

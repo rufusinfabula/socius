@@ -1,0 +1,42 @@
+{
+    "name": "spazioumano/socius",
+    "description": "Socius — Open source web system for association management",
+    "type": "project",
+    "license": "GPL-3.0-or-later",
+    "keywords": ["association", "management", "membership", "php"],
+    "homepage": "https://socius.spazioumano.org",
+    "authors": [
+        {
+            "name": "Spazio Umano",
+            "email": "info@spazioumano.org",
+            "homepage": "https://spazioumano.org"
+        }
+    ],
+    "require": {
+        "php": ">=8.1",
+        "ext-pdo": "*",
+        "ext-mbstring": "*",
+        "ext-json": "*",
+        "ext-openssl": "*"
+    },
+    "require-dev": {},
+    "autoload": {
+        "psr-4": {
+            "Socius\\": "app/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Socius\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "install-app": "php install/cli.php"
+    },
+    "config": {
+        "optimize-autoloader": true,
+        "sort-packages": true
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}
