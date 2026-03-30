@@ -17,10 +17,12 @@
 declare(strict_types=1);
 
 use Socius\Controllers\AuthController;
+use Socius\Controllers\CommunicationController;
 use Socius\Controllers\EventController;
 use Socius\Controllers\HomeController;
 use Socius\Controllers\MemberController;
 use Socius\Controllers\PaymentController;
+use Socius\Controllers\SettingsController;
 
 /**
  * Application route definitions.
@@ -57,6 +59,12 @@ $router->get('/events/{id}',         EventController::class,    'show',    ['aut
 $router->post('/events',             EventController::class,    'store',   ['auth', 'csrf']);
 $router->post('/events/{id}/edit',   EventController::class,    'update',  ['auth', 'csrf']);
 $router->post('/events/{id}/delete', EventController::class,    'delete',  ['auth', 'csrf']);
+
+// Communications (auth required)
+$router->get('/communications',      CommunicationController::class, 'index', ['auth']);
+
+// Settings (auth required)
+$router->get('/settings',            SettingsController::class,     'index', ['auth']);
 
 // Payments (auth required)
 $router->get('/payments',            PaymentController::class,  'index',   ['auth']);

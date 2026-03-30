@@ -123,11 +123,19 @@ class MemberController extends BaseController
             ]);
         }
 
+        try {
+            $memberships = Member::getMemberships($id);
+            $payments    = Member::getPayments($id);
+        } catch (\Throwable $e) {
+            $memberships = [];
+            $payments    = [];
+        }
+
         return $this->view('themes/uikit/members/show', [
             'activeNav'   => 'members',
             'member'      => $member,
-            'memberships' => Member::getMemberships($id),
-            'payments'    => Member::getPayments($id),
+            'memberships' => $memberships,
+            'payments'    => $payments,
             'currentUser' => $currentUser,
             'flash'       => $this->getFlash(),
         ]);

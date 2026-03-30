@@ -18,13 +18,67 @@ declare(strict_types=1);
 
 namespace Socius\Controllers;
 
+use Socius\Core\Middleware;
+use Socius\Core\Request;
+use Socius\Core\Response;
+
 /**
  * Event management.
  *
- * @todo Implement index(), show(), create(), store(), edit(), update(), destroy(),
+ * @todo Implement full CRUD: create(), edit(), update(), destroy(),
  *       register() (member registration for an event).
  */
 class EventController extends BaseController
 {
-    // placeholder
+    public function index(Request $request, array $params): Response
+    {
+        if (!Middleware::isAuthenticated()) {
+            return $this->redirect('/login');
+        }
+
+        return $this->view('themes/uikit/events/index', [
+            'activeNav' => 'events',
+        ]);
+    }
+
+    public function show(Request $request, array $params): Response
+    {
+        if (!Middleware::isAuthenticated()) {
+            return $this->redirect('/login');
+        }
+
+        $id = (int) ($params['id'] ?? 0);
+
+        return $this->view('themes/uikit/events/show', [
+            'activeNav' => 'events',
+            'id'        => $id,
+        ]);
+    }
+
+    public function store(Request $request, array $params): Response
+    {
+        if (!Middleware::isAuthenticated()) {
+            return $this->redirect('/login');
+        }
+
+        return $this->redirect('/events');
+    }
+
+    public function update(Request $request, array $params): Response
+    {
+        if (!Middleware::isAuthenticated()) {
+            return $this->redirect('/login');
+        }
+
+        return $this->redirect('/events');
+    }
+
+    public function delete(Request $request, array $params): Response
+    {
+        if (!Middleware::isAuthenticated()) {
+            return $this->redirect('/login');
+        }
+
+        return $this->redirect('/events');
+    }
 }
