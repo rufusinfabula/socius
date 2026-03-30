@@ -40,13 +40,16 @@ $router->get('/reset-password/{token}',  AuthController::class,    'showResetPas
 $router->post('/reset-password/{token}', AuthController::class,    'resetPassword');
 
 // Members (auth required)
-$router->get('/members',              MemberController::class,   'index',   ['auth']);
-$router->get('/members/{id}',         MemberController::class,   'show',    ['auth']);
-$router->get('/members/create',       MemberController::class,   'create',  ['auth']);
-$router->post('/members',             MemberController::class,   'store',   ['auth', 'csrf']);
-$router->get('/members/{id}/edit',    MemberController::class,   'edit',    ['auth']);
-$router->post('/members/{id}/edit',   MemberController::class,   'update',  ['auth', 'csrf']);
-$router->post('/members/{id}/delete', MemberController::class,   'delete',  ['auth', 'csrf']);
+// NOTE: static routes (/members/create) must be registered BEFORE parameterised
+// routes (/members/{id}) to prevent the pattern from swallowing literal segments.
+$router->get('/members',                          MemberController::class, 'index',         ['auth']);
+$router->get('/members/create',                   MemberController::class, 'create',        ['auth']);
+$router->post('/members',                         MemberController::class, 'store',         ['auth', 'csrf']);
+$router->get('/members/{id}',                     MemberController::class, 'show',          ['auth']);
+$router->get('/members/{id}/edit',                MemberController::class, 'edit',          ['auth']);
+$router->post('/members/{id}/edit',               MemberController::class, 'update',        ['auth', 'csrf']);
+$router->get('/members/{id}/delete-confirm',      MemberController::class, 'deleteConfirm', ['auth']);
+$router->post('/members/{id}/delete',             MemberController::class, 'deleteExecute', ['auth', 'csrf']);
 
 // Events (auth required)
 $router->get('/events',              EventController::class,    'index',   ['auth']);

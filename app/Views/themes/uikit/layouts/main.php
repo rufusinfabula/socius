@@ -40,17 +40,31 @@
     <div class="uk-width-1-6@m uk-sidebar">
         <ul class="uk-nav uk-nav-default uk-margin-top">
             <li class="<?= ($activeNav ?? '') === 'dashboard' ? 'uk-active' : '' ?>">
-                <a href="/"><span uk-icon="home" class="uk-margin-small-right"></span>Dashboard</a>
+                <a href="/index.php?route=dashboard">
+                    <span uk-icon="home" class="uk-margin-small-right"></span>Dashboard
+                </a>
             </li>
             <li class="uk-nav-divider"></li>
             <li class="<?= ($activeNav ?? '') === 'members' ? 'uk-active' : '' ?>">
-                <a href="/members"><span uk-icon="users" class="uk-margin-small-right"></span>Soci</a>
+                <a href="/index.php?route=members">
+                    <span uk-icon="users" class="uk-margin-small-right"></span>Soci
+                </a>
             </li>
             <li class="<?= ($activeNav ?? '') === 'events' ? 'uk-active' : '' ?>">
-                <a href="/events"><span uk-icon="calendar" class="uk-margin-small-right"></span>Eventi</a>
+                <a href="/index.php?route=events">
+                    <span uk-icon="calendar" class="uk-margin-small-right"></span>Eventi
+                </a>
             </li>
-            <li class="<?= ($activeNav ?? '') === 'payments' ? 'uk-active' : '' ?>">
-                <a href="/payments"><span uk-icon="credit-card" class="uk-margin-small-right"></span>Pagamenti</a>
+            <li class="<?= ($activeNav ?? '') === 'communications' ? 'uk-active' : '' ?>">
+                <a href="/index.php?route=communications">
+                    <span uk-icon="mail" class="uk-margin-small-right"></span>Comunicazioni
+                </a>
+            </li>
+            <li class="uk-nav-divider"></li>
+            <li class="<?= ($activeNav ?? '') === 'settings' ? 'uk-active' : '' ?>">
+                <a href="/index.php?route=settings">
+                    <span uk-icon="settings" class="uk-margin-small-right"></span>Impostazioni
+                </a>
             </li>
         </ul>
     </div>
