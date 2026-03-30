@@ -247,14 +247,14 @@ $content = (function () use (
                                value="<?= $v('email') ?>" required autocomplete="email">
                     </div>
                     <div class="uk-margin">
-                        <label class="uk-form-label" for="phone"><?= $e(__('members.phone')) ?></label>
-                        <input class="uk-input" type="tel" id="phone" name="phone"
-                               value="<?= $v('phone') ?>">
+                        <label class="uk-form-label" for="phone1"><?= $e(__('members.phone1')) ?></label>
+                        <input class="uk-input" type="tel" id="phone1" name="phone1"
+                               value="<?= $v('phone1') ?>">
                     </div>
                     <div class="uk-margin">
-                        <label class="uk-form-label" for="mobile"><?= $e(__('members.mobile')) ?></label>
-                        <input class="uk-input" type="tel" id="mobile" name="mobile"
-                               value="<?= $v('mobile') ?>">
+                        <label class="uk-form-label" for="phone2"><?= $e(__('members.phone2')) ?></label>
+                        <input class="uk-input" type="tel" id="phone2" name="phone2"
+                               value="<?= $v('phone2') ?>">
                     </div>
                 </div>
 

@@ -230,16 +230,16 @@ $content = (function () use (
                         <a href="mailto:<?= $e($member['email'] ?? '') ?>"><?= $e($member['email'] ?? '—') ?></a>
                     </p>
                 </div>
-                <?php if (!empty($member['phone'])): ?>
+                <?php if (!empty($member['phone1'])): ?>
                 <div class="uk-margin">
-                    <p class="uk-text-muted uk-text-small uk-margin-remove-bottom"><?= $e(__('members.phone')) ?></p>
-                    <p class="uk-margin-remove-top"><?= $e($member['phone']) ?></p>
+                    <p class="uk-text-muted uk-text-small uk-margin-remove-bottom"><?= $e(__('members.phone1')) ?></p>
+                    <p class="uk-margin-remove-top"><?= $e($member['phone1']) ?></p>
                 </div>
                 <?php endif; ?>
-                <?php if (!empty($member['mobile'])): ?>
+                <?php if (!empty($member['phone2'])): ?>
                 <div class="uk-margin">
-                    <p class="uk-text-muted uk-text-small uk-margin-remove-bottom"><?= $e(__('members.mobile')) ?></p>
-                    <p class="uk-margin-remove-top"><?= $e($member['mobile']) ?></p>
+                    <p class="uk-text-muted uk-text-small uk-margin-remove-bottom"><?= $e(__('members.phone2')) ?></p>
+                    <p class="uk-margin-remove-top"><?= $e($member['phone2']) ?></p>
                 </div>
                 <?php endif; ?>
             </div>
