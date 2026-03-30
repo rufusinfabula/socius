@@ -1,5 +1,6 @@
 {
     "name": "spazioumano/socius",
+    "version": "0.1.2",
     "description": "Socius — Open source web system for association management",
     "type": "project",
     "license": "GPL-3.0-or-later",

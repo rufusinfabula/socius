@@ -2,11 +2,19 @@
 $e = fn($v) => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
 
 $statusUkLabel = [
-    'active'    => 'success',
-    'suspended' => 'default',
-    'expired'   => 'danger',
-    'resigned'  => 'warning',
-    'deceased'  => 'secondary',
+    'active'      => 'success',
+    'in_renewal'  => 'warning',
+    'not_renewed' => '',
+    'lapsed'      => 'danger',
+    'suspended'   => '',
+    'resigned'    => '',
+    'deceased'    => '',
+];
+$statusStyle = [
+    'not_renewed' => 'background:#e67e22; color:#fff',
+    'suspended'   => 'background:#999; color:#fff',
+    'resigned'    => 'background:#666; color:#fff',
+    'deceased'    => 'background:#222; color:#fff',
 ];
 
 $membershipStatusUkLabel = [
@@ -18,7 +26,7 @@ $membershipStatusUkLabel = [
 
 $content = (function () use (
     $member, $memberships, $payments, $currentUser, $flashSuccess, $flashError,
-    $e, $statusUkLabel, $membershipStatusUkLabel
+    $e, $statusUkLabel, $statusStyle, $membershipStatusUkLabel
 ): string {
     ob_start();
     $isSuperAdmin = (int) ($currentUser['role_id'] ?? 4) === 1;
@@ -46,7 +54,9 @@ $content = (function () use (
             <div>
                 <h2 class="uk-card-title uk-margin-remove">
                     <?= $e($member['surname'] . ' ' . $member['name']) ?>
-                    <span class="uk-label uk-label-<?= $e($statusUkLabel[$s] ?? 'default') ?> uk-margin-small-left">
+                    <?php $ukSuffix = $statusUkLabel[$s] ?? ''; $badgeStyle = $statusStyle[$s] ?? ''; ?>
+                    <span class="uk-label<?= $ukSuffix ? ' uk-label-' . $e($ukSuffix) : '' ?> uk-margin-small-left"
+                          <?= $badgeStyle ? 'style="' . $e($badgeStyle) . '"' : '' ?>>
                         <?= $e($statusText) ?>
                     </span>
                 </h2>
@@ -165,7 +175,9 @@ $content = (function () use (
                 <div class="uk-margin">
                     <p class="uk-text-muted uk-text-small uk-margin-remove-bottom"><?= $e(__('members.status')) ?></p>
                     <p class="uk-margin-remove-top">
-                        <span class="uk-label uk-label-<?= $e($statusUkLabel[$s] ?? 'default') ?>">
+                        <?php $ukSuffix = $statusUkLabel[$s] ?? ''; $badgeStyle = $statusStyle[$s] ?? ''; ?>
+                        <span class="uk-label<?= $ukSuffix ? ' uk-label-' . $e($ukSuffix) : '' ?>"
+                              <?= $badgeStyle ? 'style="' . $e($badgeStyle) . '"' : '' ?>>
                             <?= $e($statusText) ?>
                         </span>
                     </p>

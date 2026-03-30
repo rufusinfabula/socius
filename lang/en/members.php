@@ -59,8 +59,10 @@ return [
     // Form fields — Membership
     // -------------------------------------------------------------------------
     'status_active'        => 'Active',
+    'status_in_renewal'    => 'In renewal',
+    'status_not_renewed'   => 'Not renewed',
+    'status_lapsed'        => 'Lapsed',
     'status_suspended'     => 'Suspended',
-    'status_expired'       => 'Expired',
     'status_resigned'      => 'Resigned',
     'status_deceased'      => 'Deceased',
     'resigned_on'          => 'Resignation date',
@@ -155,6 +157,27 @@ return [
     'payment_date'         => 'Date',
     'payment_gateway'      => 'Method',
     'payment_status'       => 'Status',
+
+    // -------------------------------------------------------------------------
+    // Membership categories
+    // -------------------------------------------------------------------------
+    'categories'                 => 'Membership categories',
+    'category_name'              => 'Category name',
+    'category_fee'               => 'Annual fee',
+    'category_free'              => 'Free',
+    'category_exempt'            => 'Exempt from renewal',
+    'category_requires_approval' => 'Requires approval',
+    'category_valid_from'        => 'Valid from',
+    'category_valid_until'       => 'Valid until',
+    'category_description'       => 'Description',
+    'category_active'            => 'Active',
+    'fee_history'                => 'Fee history',
+    'fee_year'                   => 'Year',
+    'fee_amount'                 => 'Fee',
+    'fee_note'                   => 'Note',
+    'fee_approved_by'            => 'Approved by',
+    'fee_confirm_previous'       => 'Confirm previous year fee',
+    'fee_set_new'                => 'Set new fee',
 
     // -------------------------------------------------------------------------
     // Emergency delete

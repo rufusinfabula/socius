@@ -10,8 +10,8 @@ require_once __DIR__ . '/_init.php';
 
 requireStaff();
 
-use Socius\Core\Database;
 use Socius\Models\Member;
+use Socius\Models\MembershipCategory;
 
 $currentUser = current_user();
 $categories  = [];
@@ -19,8 +19,7 @@ $error       = null;
 $formData    = null;
 
 try {
-    $db         = Database::getInstance();
-    $categories = $db->fetchAll('SELECT id, label FROM membership_categories ORDER BY label ASC');
+    $categories = MembershipCategory::findAll(true);
 } catch (\Throwable) {}
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -43,7 +42,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'city'        => trim((string) ($_POST['city'] ?? '')),
             'province'    => strtoupper(trim((string) ($_POST['province'] ?? ''))),
             'country'     => strtoupper(trim((string) ($_POST['country'] ?? 'IT'))),
-            'status'      => (string) ($_POST['status'] ?? 'attivo'),
+            'status'      => (string) ($_POST['status'] ?? 'active'),
             'category_id' => ($_POST['category_id'] ?? '') !== '' ? (int) $_POST['category_id'] : null,
             'joined_on'   => ($_POST['joined_on'] ?? '') ?: date('Y-m-d'),
             'resigned_on' => ($_POST['resigned_on'] ?? '') ?: null,

@@ -2,30 +2,42 @@
 $e = fn($v) => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
 
 $statusUkLabel = [
-    'active'    => 'success',
-    'suspended' => 'default',
-    'expired'   => 'danger',
-    'resigned'  => 'warning',
-    'deceased'  => 'secondary',
+    'active'      => 'success',
+    'in_renewal'  => 'warning',
+    'not_renewed' => '',
+    'lapsed'      => 'danger',
+    'suspended'   => '',
+    'resigned'    => '',
+    'deceased'    => '',
+];
+$statusStyle = [
+    'not_renewed' => 'background:#e67e22; color:#fff',
+    'suspended'   => 'background:#999; color:#fff',
+    'resigned'    => 'background:#666; color:#fff',
+    'deceased'    => 'background:#222; color:#fff',
 ];
 $statusLabel = [
-    'active'    => __('members.status_active'),
-    'suspended' => __('members.status_suspended'),
-    'expired'   => __('members.status_expired'),
-    'resigned'  => __('members.status_resigned'),
-    'deceased'  => __('members.status_deceased'),
+    'active'      => __('members.status_active'),
+    'in_renewal'  => __('members.status_in_renewal'),
+    'not_renewed' => __('members.status_not_renewed'),
+    'lapsed'      => __('members.status_lapsed'),
+    'suspended'   => __('members.status_suspended'),
+    'resigned'    => __('members.status_resigned'),
+    'deceased'    => __('members.status_deceased'),
 ];
 $statusColor = [
-    'active'    => '#32d296',
-    'suspended' => '#999',
-    'expired'   => '#f0506e',
-    'resigned'  => '#faa05a',
-    'deceased'  => '#666',
+    'active'      => '#32d296',
+    'in_renewal'  => '#f0c060',
+    'not_renewed' => '#e67e22',
+    'lapsed'      => '#f0506e',
+    'suspended'   => '#999',
+    'resigned'    => '#666',
+    'deceased'    => '#222',
 ];
 
 $content = (function () use (
     $members, $stats, $filters, $categories, $flashSuccess, $flashError,
-    $e, $statusUkLabel, $statusLabel, $statusColor
+    $e, $statusUkLabel, $statusStyle, $statusLabel, $statusColor
 ): string {
     ob_start();
     ?>
@@ -67,7 +79,7 @@ $content = (function () use (
             </div>
             <div class="uk-width-auto">
                 <select class="uk-select uk-form-small" name="status">
-                    <option value="">Tutti gli stati</option>
+                    <option value=""><?= $e(__('members.filter_all_statuses')) ?></option>
                     <?php foreach (array_keys($statusLabel) as $s): ?>
                         <option value="<?= $e($s) ?>" <?= $filters['status'] === $s ? 'selected' : '' ?>>
                             <?= $e($statusLabel[$s]) ?>
@@ -121,8 +133,13 @@ $content = (function () use (
                     <td><?= $e($m['name']) ?></td>
                     <td><?= $e($m['email']) ?></td>
                     <td>
-                        <?php $s = $m['status'] ?? 'active'; ?>
-                        <span class="uk-label uk-label-<?= $e($statusUkLabel[$s] ?? 'default') ?>">
+                        <?php
+                        $s = $m['status'] ?? 'active';
+                        $ukSuffix  = $statusUkLabel[$s] ?? '';
+                        $badgeStyle = $statusStyle[$s] ?? '';
+                        ?>
+                        <span class="uk-label<?= $ukSuffix ? ' uk-label-' . $e($ukSuffix) : '' ?>"
+                              <?= $badgeStyle ? 'style="' . $e($badgeStyle) . '"' : '' ?>>
                             <?= $e($statusLabel[$s] ?? $s) ?>
                         </span>
                     </td>

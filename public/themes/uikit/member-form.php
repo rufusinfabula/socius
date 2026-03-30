@@ -8,11 +8,13 @@ $action  = $isEdit
 $v = fn(string $field, mixed $default = '') => $e($member[$field] ?? $default);
 
 $statusOptions = [
-    'active'    => __('members.status_active'),
-    'suspended' => __('members.status_suspended'),
-    'expired'   => __('members.status_expired'),
-    'resigned'  => __('members.status_resigned'),
-    'deceased'  => __('members.status_deceased'),
+    'active'      => __('members.status_active'),
+    'in_renewal'  => __('members.status_in_renewal'),
+    'not_renewed' => __('members.status_not_renewed'),
+    'lapsed'      => __('members.status_lapsed'),
+    'suspended'   => __('members.status_suspended'),
+    'resigned'    => __('members.status_resigned'),
+    'deceased'    => __('members.status_deceased'),
 ];
 
 $content = (function () use (
@@ -196,7 +198,7 @@ $content = (function () use (
                             <?php foreach ($categories as $cat): ?>
                                 <option value="<?= (int) $cat['id'] ?>"
                                     <?= (int) ($member['category_id'] ?? 0) === (int) $cat['id'] ? 'selected' : '' ?>>
-                                    <?= $e($cat['label']) ?>
+                                    <?= $e($cat['nome']) ?><?= (!(bool) $cat['is_free']) ? ' (€ ' . number_format((float) $cat['quota_annuale'], 2, ',', '.') . ')' : '' ?>
                                 </option>
                             <?php endforeach; ?>
                         </select>

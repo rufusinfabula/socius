@@ -59,8 +59,10 @@ return [
     // Campi form — Socio
     // -------------------------------------------------------------------------
     'status_active'        => 'Attivo',
+    'status_in_renewal'    => 'In rinnovo',
+    'status_not_renewed'   => 'Non rinnovato',
+    'status_lapsed'        => 'Decaduto',
     'status_suspended'     => 'Sospeso',
-    'status_expired'       => 'Scaduto',
     'status_resigned'      => 'Dimesso',
     'status_deceased'      => 'Deceduto',
     'resigned_on'          => 'Data recesso',
@@ -155,6 +157,27 @@ return [
     'payment_date'         => 'Data',
     'payment_gateway'      => 'Metodo',
     'payment_status'       => 'Stato',
+
+    // -------------------------------------------------------------------------
+    // Categorie soci
+    // -------------------------------------------------------------------------
+    'categories'                 => 'Categorie soci',
+    'category_name'              => 'Nome categoria',
+    'category_fee'               => 'Quota annuale',
+    'category_free'              => 'Gratuita',
+    'category_exempt'            => 'Esente da rinnovo',
+    'category_requires_approval' => 'Richiede approvazione',
+    'category_valid_from'        => 'Valida dal',
+    'category_valid_until'       => 'Valida fino al',
+    'category_description'       => 'Descrizione',
+    'category_active'            => 'Attiva',
+    'fee_history'                => 'Storico quote',
+    'fee_year'                   => 'Anno',
+    'fee_amount'                 => 'Quota',
+    'fee_note'                   => 'Note',
+    'fee_approved_by'            => 'Approvata da',
+    'fee_confirm_previous'       => 'Conferma quota anno precedente',
+    'fee_set_new'                => 'Imposta nuova quota',
 
     // -------------------------------------------------------------------------
     // Cancellazione emergenza
