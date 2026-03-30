@@ -163,13 +163,26 @@ $content = (function () use (
                     <?= $e(__('members.box_member')) ?>
                 </h3>
 
-                <!-- Numero tessera -->
+                <!-- N. Tessera (prominente) -->
                 <div class="uk-margin">
                     <p class="uk-text-muted uk-text-small uk-margin-remove-bottom"><?= $e(__('members.membership_number')) ?></p>
                     <p class="uk-margin-remove-top">
-                        <code><?= $e($member['membership_number'] ?? '—') ?></code>
+                        <code style="font-size:1.1rem"><?= $e($member['membership_number'] ?? '—') ?></code>
                     </p>
                 </div>
+
+                <!-- N. Socio (identificatore permanente — meno prominente) -->
+                <?php if (!empty($member['member_number'])): ?>
+                <div class="uk-margin uk-margin-small-top">
+                    <p class="uk-text-muted uk-text-small uk-margin-remove-bottom"><?= $e(__('members.member_number')) ?></p>
+                    <p class="uk-margin-remove-top uk-text-small">
+                        <?= (int) $member['member_number'] ?>
+                        <span class="uk-text-muted" style="font-size:0.8rem">
+                            — <?= $e(__('members.member_number_permanent')) ?>
+                        </span>
+                    </p>
+                </div>
+                <?php endif; ?>
 
                 <!-- Stato -->
                 <div class="uk-margin">
