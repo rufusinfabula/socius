@@ -1,23 +1,9 @@
 Options -Indexes
 
 # =============================================================================
-# URL Rewriting — OPTIONAL (clean URLs)
+# Flat-file routing — no rewrite needed.
+# Each page is a direct .php file: login.php, members.php, etc.
 # =============================================================================
-# Socius works without this block: use ?route=path query-string routing.
-# Enable this block only if mod_rewrite is available and you want clean URLs.
-# See README.md § "URL Configuration" for details.
-# =============================================================================
-<IfModule mod_rewrite.c>
-    RewriteEngine On
-    RewriteBase /
-
-    # Allow direct access to real files and directories (css, js, images…)
-    RewriteCond %{REQUEST_FILENAME} !-f
-    RewriteCond %{REQUEST_FILENAME} !-d
-
-    # Route everything else through the front controller
-    RewriteRule ^ index.php [L,QSA]
-</IfModule>
 
 # Security headers
 <IfModule mod_headers.c>
@@ -31,6 +17,11 @@ Options -Indexes
 <FilesMatch "\.(env|log|sh|sql|bak|cfg|ini)$">
     Require all denied
 </FilesMatch>
+
+# Block direct access to _init.php
+<Files "_init.php">
+    Require all denied
+</Files>
 
 # PHP settings
 <IfModule mod_php.c>

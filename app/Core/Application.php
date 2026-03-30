@@ -7,11 +7,6 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
  */
 
 declare(strict_types=1);
@@ -19,64 +14,27 @@ declare(strict_types=1);
 namespace Socius\Core;
 
 /**
- * Application kernel.
+ * Application bootstrap helper.
  *
- * Bootstraps the framework and handles the full request lifecycle:
- *   1. Load environment variables from .env
- *   2. Apply PHP runtime settings (timezone, error reporting)
- *   3. Build a Router and register application routes from config/routes.php
- *   4. Dispatch the incoming Request
- *   5. Send the Response
+ * The flat-file structure no longer needs routing — each public/*.php file
+ * handles its own logic. This class is kept for shared boot logic that may
+ * be useful in CLI scripts, jobs, or future extensions.
  *
- * Usage in public/index.php:
- *
- *   define('BASE_PATH', dirname(__DIR__));
+ * Usage (optional, in CLI scripts):
+ *   define('BASE_PATH', dirname(__DIR__, 2));
  *   require BASE_PATH . '/vendor/autoload.php';
- *   (new \Socius\Core\Application(BASE_PATH))->run();
+ *   (new \Socius\Core\Application(BASE_PATH))->boot();
  */
 class Application
 {
-    private Router $router;
-
     public function __construct(private readonly string $basePath)
     {
-        $this->boot();
-        $this->router = new Router();
-    }
-
-    // -------------------------------------------------------------------------
-    // Public API
-    // -------------------------------------------------------------------------
-
-    /**
-     * Handle the incoming HTTP request and send the response.
-     */
-    public function run(): void
-    {
-        $this->registerRoutes();
-
-        $request  = Request::fromGlobals();
-        $response = $this->router->dispatch($request);
-        $response->send();
     }
 
     /**
-     * Expose the Router so routes can be registered externally if needed.
+     * Load environment, apply runtime settings, and initialise helpers.
      */
-    public function getRouter(): Router
-    {
-        return $this->router;
-    }
-
-    // -------------------------------------------------------------------------
-    // Bootstrap
-    // -------------------------------------------------------------------------
-
-    /**
-     * Load the .env file and apply runtime PHP configuration.
-     * Must be called before any Config::get() or database access.
-     */
-    private function boot(): void
+    public function boot(): void
     {
         Config::loadEnv($this->basePath . '/.env');
 
@@ -88,36 +46,9 @@ class Application
         ini_set('display_errors', $debug ? '1' : '0');
         ini_set('log_errors', '1');
 
-        // Secure session cookie settings (must be called before session_start)
-        session_set_cookie_params([
-            'lifetime' => 0,
-            'path'     => '/',
-            'domain'   => '',
-            'secure'   => !$debug,
-            'httponly' => true,
-            'samesite' => 'Strict',
-        ]);
-
-        // Load global helper functions
         $helpersFile = $this->basePath . '/app/helpers.php';
         if (is_file($helpersFile)) {
             require_once $helpersFile;
-        }
-    }
-
-    /**
-     * Load route definitions from config/routes.php.
-     *
-     * The file receives $router as a local variable so it can call
-     * $router->get(...) and $router->post(...) directly.
-     */
-    private function registerRoutes(): void
-    {
-        $router    = $this->router;
-        $routeFile = $this->basePath . '/config/routes.php';
-
-        if (is_file($routeFile)) {
-            require $routeFile;
         }
     }
 }

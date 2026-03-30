@@ -8,8 +8,11 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/_init.php';
 
-if (!empty($_SESSION['auth_user_id'])) {
-    redirect('dashboard.php');
-} else {
-    redirect('login.php');
-}
+requireAuth();
+
+$currentUser = current_user();
+
+theme('settings', [
+    'activeNav'   => 'settings',
+    'currentUser' => $currentUser,
+]);
