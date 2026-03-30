@@ -100,6 +100,39 @@ return [
     'payment_gateway'      => 'Method',
     'payment_status'       => 'Status',
 
+    // Sex / Gender
+    'sex'                  => 'Sex',
+    'sex_m'                => 'M — Male',
+    'sex_f'                => 'F — Female',
+    'gender'               => 'Gender',
+    'gender_man'           => 'Man',
+    'gender_woman'         => 'Woman',
+    'gender_nonbinary'     => 'Non-binary',
+    'gender_fluid'         => 'Gender fluid',
+    'gender_not_specified' => 'Prefer not to say',
+    'gender_other'         => 'Other — specify',
+    'gender_gdpr_note'     => 'Gender is optional and treated as sensitive data (GDPR).',
+
+    // Fiscal code helper
+    'cf_calculate'         => 'Calculate',
+    'cf_calculate_note'    => 'Automatic tax code calculation is under development.',
+
+    // Box headings
+    'box_registry'         => 'Registry',
+    'box_member'           => 'Member',
+    'box_contacts'         => 'Contacts',
+
+    // Status values (new set)
+    'status_attivo'        => 'Active',
+    'status_in_rinnovo'    => 'Renewal pending',
+    'status_non_rinnovato' => 'Not renewed',
+    'status_decaduto'      => 'Lapsed',
+    'status_onorario'      => 'Honorary',
+    'status_sospeso'       => 'Suspended',
+
+    // Contact fields
+    'mobile'               => 'Mobile',
+
     // Emergency delete
     'emergency_delete'          => 'Emergency deletion',
     'emergency_delete_warning'  => 'Irreversible operation',

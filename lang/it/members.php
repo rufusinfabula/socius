@@ -100,6 +100,39 @@ return [
     'payment_gateway'      => 'Metodo',
     'payment_status'       => 'Stato',
 
+    // Sex / Gender
+    'sex'                  => 'Sesso',
+    'sex_m'                => 'M — Maschio',
+    'sex_f'                => 'F — Femmina',
+    'gender'               => 'Genere',
+    'gender_man'           => 'Uomo',
+    'gender_woman'         => 'Donna',
+    'gender_nonbinary'     => 'Non binario',
+    'gender_fluid'         => 'Fluido',
+    'gender_not_specified' => 'Preferisco non specificare',
+    'gender_other'         => 'Altro — specifica',
+    'gender_gdpr_note'     => 'Il campo genere è facoltativo e trattato come dato sensibile (GDPR).',
+
+    // Fiscal code helper
+    'cf_calculate'         => 'Calcola',
+    'cf_calculate_note'    => 'Il calcolo automatico del codice fiscale è in sviluppo.',
+
+    // Box headings
+    'box_registry'         => 'Anagrafica',
+    'box_member'           => 'Socio',
+    'box_contacts'         => 'Contatti',
+
+    // Status values (new set)
+    'status_attivo'        => 'Attivo',
+    'status_in_rinnovo'    => 'In rinnovo',
+    'status_non_rinnovato' => 'Non rinnovato',
+    'status_decaduto'      => 'Decaduto',
+    'status_onorario'      => 'Onorario',
+    'status_sospeso'       => 'Sospeso',
+
+    // Contact fields
+    'mobile'               => 'Cellulare',
+
     // Emergency delete
     'emergency_delete'          => 'Cancellazione di emergenza',
     'emergency_delete_warning'  => 'Operazione irreversibile',

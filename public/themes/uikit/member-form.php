@@ -1,23 +1,24 @@
 <?php
 $e       = fn($v) => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
 $isEdit  = $isEdit ?? false;
-$heading = $isEdit ? 'Modifica Socio' : 'Nuovo Socio';
+$heading = $isEdit ? __('members.edit_member') : __('members.new_member');
 $action  = $isEdit
     ? 'member-edit.php?id=' . (int) ($member['id'] ?? 0)
     : 'member-new.php';
 $v = fn(string $field, mixed $default = '') => $e($member[$field] ?? $default);
 
-$statusLabels = [
-    'active'    => 'Attivo',
-    'suspended' => 'Sospeso',
-    'expired'   => 'Scaduto',
-    'resigned'  => 'Dimesso',
-    'deceased'  => 'Deceduto',
+$statusOptions = [
+    'attivo'        => __('members.status_attivo'),
+    'in_rinnovo'    => __('members.status_in_rinnovo'),
+    'non_rinnovato' => __('members.status_non_rinnovato'),
+    'decaduto'      => __('members.status_decaduto'),
+    'onorario'      => __('members.status_onorario'),
+    'sospeso'       => __('members.status_sospeso'),
 ];
 
 $content = (function () use (
-    $member, $categories, $currentUser, $isEdit, $heading, $action, $error,
-    $e, $v, $statusLabels
+    $member, $categories, $currentUser, $isEdit, $heading, $action,
+    $error, $e, $v, $statusOptions
 ): string {
     ob_start();
     $isStaff = (int) ($currentUser['role_id'] ?? 4) <= 3;
@@ -32,7 +33,7 @@ $content = (function () use (
 
     <!-- Breadcrumb -->
     <ul class="uk-breadcrumb uk-margin-small-bottom">
-        <li><a href="members.php">Lista Soci</a></li>
+        <li><a href="members.php"><?= $e(__('members.member_list')) ?></a></li>
         <?php if ($isEdit && !empty($member['id'])): ?>
             <li>
                 <a href="member.php?id=<?= (int) $member['id'] ?>">
@@ -45,113 +46,154 @@ $content = (function () use (
 
     <h1 class="uk-heading-small uk-margin-bottom"><?= $e($heading) ?></h1>
 
-    <form method="POST" action="<?= $e($action) ?>" novalidate class="uk-form-stacked">
+    <form method="POST" action="<?= $e($action) ?>" novalidate class="uk-form-stacked" id="member-form">
         <?= csrf_field() ?>
 
-        <div class="uk-grid uk-grid-medium" uk-grid>
+        <!-- =====================================================================
+             ROW 1: Anagrafica (2/3) + Socio (1/3)
+        ====================================================================== -->
+        <div class="uk-grid uk-grid-medium uk-margin-bottom" uk-grid>
 
-            <!-- Anagrafica -->
-            <div class="uk-width-1-2@m">
+            <!-- BOX ANAGRAFICA (2/3) -->
+            <div class="uk-width-2-3@m">
                 <div class="uk-card uk-card-default uk-card-body uk-border-rounded">
-                    <h3 class="uk-card-title">Anagrafica</h3>
+                    <h3 class="uk-card-title">
+                        <span uk-icon="icon: user; ratio: 1.1" class="uk-margin-small-right"></span>
+                        <?= $e(__('members.box_registry')) ?>
+                    </h3>
 
-                    <div class="uk-margin">
-                        <label class="uk-form-label" for="surname">Cognome *</label>
-                        <input class="uk-input" type="text" id="surname" name="surname"
-                               value="<?= $v('surname') ?>" required autofocus>
-                    </div>
-                    <div class="uk-margin">
-                        <label class="uk-form-label" for="name">Nome *</label>
-                        <input class="uk-input" type="text" id="name" name="name"
-                               value="<?= $v('name') ?>" required>
-                    </div>
-                    <div class="uk-margin">
-                        <label class="uk-form-label" for="email">Email *</label>
-                        <input class="uk-input" type="email" id="email" name="email"
-                               value="<?= $v('email') ?>" required autocomplete="email">
-                    </div>
-                    <div class="uk-margin">
-                        <label class="uk-form-label" for="phone">Telefono</label>
-                        <input class="uk-input" type="tel" id="phone" name="phone"
-                               value="<?= $v('phone') ?>">
-                    </div>
-                    <div class="uk-margin">
-                        <label class="uk-form-label" for="fiscal_code">Codice fiscale</label>
-                        <input class="uk-input" type="text" id="fiscal_code" name="fiscal_code"
-                               value="<?= $v('fiscal_code') ?>" maxlength="16"
-                               style="text-transform:uppercase">
-                    </div>
                     <div class="uk-grid uk-grid-small" uk-grid>
-                        <div class="uk-width-1-2">
-                            <label class="uk-form-label" for="birth_date">Data di nascita</label>
+
+                        <!-- Cognome -->
+                        <div class="uk-width-1-2@s">
+                            <label class="uk-form-label" for="surname"><?= $e(__('members.surname')) ?> *</label>
+                            <input class="uk-input" type="text" id="surname" name="surname"
+                                   value="<?= $v('surname') ?>" required autofocus>
+                        </div>
+
+                        <!-- Nome -->
+                        <div class="uk-width-1-2@s">
+                            <label class="uk-form-label" for="name"><?= $e(__('members.name')) ?> *</label>
+                            <input class="uk-input" type="text" id="name" name="name"
+                                   value="<?= $v('name') ?>" required>
+                        </div>
+
+                        <!-- Sesso -->
+                        <div class="uk-width-1-3@s">
+                            <label class="uk-form-label" for="sesso"><?= $e(__('members.sex')) ?></label>
+                            <select class="uk-select" id="sesso" name="sesso">
+                                <option value="">—</option>
+                                <option value="M" <?= ($member['sesso'] ?? '') === 'M' ? 'selected' : '' ?>>
+                                    <?= $e(__('members.sex_m')) ?>
+                                </option>
+                                <option value="F" <?= ($member['sesso'] ?? '') === 'F' ? 'selected' : '' ?>>
+                                    <?= $e(__('members.sex_f')) ?>
+                                </option>
+                            </select>
+                        </div>
+
+                        <!-- Genere -->
+                        <div class="uk-width-2-3@s">
+                            <label class="uk-form-label" for="genere"><?= $e(__('members.gender')) ?></label>
+                            <select class="uk-select" id="genere-select">
+                                <option value="">—</option>
+                                <option value="Uomo"><?= $e(__('members.gender_man')) ?></option>
+                                <option value="Donna"><?= $e(__('members.gender_woman')) ?></option>
+                                <option value="Non binario"><?= $e(__('members.gender_nonbinary')) ?></option>
+                                <option value="Fluido"><?= $e(__('members.gender_fluid')) ?></option>
+                                <option value="Preferisco non specificare"><?= $e(__('members.gender_not_specified')) ?></option>
+                                <option value="__other__"><?= $e(__('members.gender_other')) ?></option>
+                            </select>
+                            <input class="uk-input uk-margin-small-top" type="text" id="genere" name="genere"
+                                   value="<?= $v('genere') ?>"
+                                   placeholder="<?= $e(__('members.gender')) ?>">
+                            <p class="uk-text-small uk-text-muted uk-margin-remove-top" style="font-size:0.8rem">
+                                <?= $e(__('members.gender_gdpr_note')) ?>
+                            </p>
+                        </div>
+
+                        <!-- Data di nascita -->
+                        <div class="uk-width-1-2@s">
+                            <label class="uk-form-label" for="birth_date"><?= $e(__('members.birth_date')) ?></label>
                             <input class="uk-input" type="date" id="birth_date" name="birth_date"
                                    value="<?= $v('birth_date') ?>">
                         </div>
-                        <div class="uk-width-1-2">
-                            <label class="uk-form-label" for="birth_place">Luogo di nascita</label>
+
+                        <!-- Luogo di nascita -->
+                        <div class="uk-width-1-2@s">
+                            <label class="uk-form-label" for="birth_place"><?= $e(__('members.birth_place')) ?></label>
                             <input class="uk-input" type="text" id="birth_place" name="birth_place"
                                    value="<?= $v('birth_place') ?>">
                         </div>
-                    </div>
-                </div>
-            </div>
 
-            <!-- Indirizzo e tessera -->
-            <div class="uk-width-1-2@m">
-                <div class="uk-card uk-card-default uk-card-body uk-border-rounded uk-margin-bottom">
-                    <h3 class="uk-card-title">Indirizzo</h3>
+                        <!-- Codice fiscale + pulsante Calcola -->
+                        <div class="uk-width-1-1">
+                            <label class="uk-form-label" for="fiscal_code"><?= $e(__('members.fiscal_code')) ?></label>
+                            <div class="uk-flex uk-flex-middle" style="gap:8px">
+                                <input class="uk-input" type="text" id="fiscal_code" name="fiscal_code"
+                                       value="<?= $v('fiscal_code') ?>" maxlength="16"
+                                       style="text-transform:uppercase; flex:1">
+                                <button type="button" class="uk-button uk-button-default uk-button-small"
+                                        id="btn-calc-cf" title="<?= $e(__('members.cf_calculate')) ?>">
+                                    <span uk-icon="refresh"></span>
+                                    <?= $e(__('members.cf_calculate')) ?>
+                                </button>
+                            </div>
+                            <p class="uk-text-small uk-text-muted uk-margin-remove-top" style="font-size:0.8rem" id="cf-note" hidden>
+                                <?= $e(__('members.cf_calculate_note')) ?>
+                            </p>
+                        </div>
 
-                    <div class="uk-margin">
-                        <label class="uk-form-label" for="address">Via/Piazza</label>
-                        <input class="uk-input" type="text" id="address" name="address"
-                               value="<?= $v('address') ?>">
-                    </div>
-                    <div class="uk-grid uk-grid-small" uk-grid>
-                        <div class="uk-width-1-3">
-                            <label class="uk-form-label" for="postal_code">CAP</label>
-                            <input class="uk-input" type="text" id="postal_code" name="postal_code"
-                                   value="<?= $v('postal_code') ?>" maxlength="10">
-                        </div>
-                        <div class="uk-width-1-3">
-                            <label class="uk-form-label" for="city">Città</label>
-                            <input class="uk-input" type="text" id="city" name="city"
-                                   value="<?= $v('city') ?>">
-                        </div>
-                        <div class="uk-width-1-3">
-                            <label class="uk-form-label" for="province">Prov.</label>
-                            <input class="uk-input" type="text" id="province" name="province"
-                                   value="<?= $v('province') ?>" maxlength="5"
-                                   style="text-transform:uppercase">
-                        </div>
-                    </div>
-                    <div class="uk-margin">
-                        <label class="uk-form-label" for="country">Paese</label>
-                        <input class="uk-input" type="text" id="country" name="country"
-                               value="<?= $v('country', 'IT') ?>" maxlength="2"
-                               style="text-transform:uppercase">
-                    </div>
-                </div>
+                    </div><!-- /grid -->
+                </div><!-- /card anagrafica -->
+            </div><!-- /col 2/3 -->
 
+            <!-- BOX SOCIO (1/3) -->
+            <div class="uk-width-1-3@m">
                 <div class="uk-card uk-card-default uk-card-body uk-border-rounded">
-                    <h3 class="uk-card-title">Tessera</h3>
+                    <h3 class="uk-card-title">
+                        <span uk-icon="icon: tag; ratio: 1.1" class="uk-margin-small-right"></span>
+                        <?= $e(__('members.box_member')) ?>
+                    </h3>
 
+                    <!-- Numero socio (read-only se modifica) -->
+                    <?php if ($isEdit && !empty($member['membership_number'])): ?>
                     <div class="uk-margin">
-                        <label class="uk-form-label" for="status">Stato</label>
+                        <label class="uk-form-label"><?= $e(__('members.membership_number')) ?></label>
+                        <div class="uk-input" style="background:#f8f8f8;cursor:default;color:#666">
+                            <code><?= $v('membership_number') ?></code>
+                        </div>
+                    </div>
+                    <?php else: ?>
+                    <div class="uk-margin">
+                        <label class="uk-form-label"><?= $e(__('members.membership_number')) ?></label>
+                        <p class="uk-text-muted uk-text-small uk-margin-remove">
+                            Assegnato automaticamente
+                        </p>
+                    </div>
+                    <?php endif; ?>
+
+                    <!-- Status (staff only) -->
+                    <?php if ($isStaff): ?>
+                    <div class="uk-margin">
+                        <label class="uk-form-label" for="status"><?= $e(__('members.status')) ?></label>
                         <select class="uk-select" id="status" name="status">
-                            <?php foreach ($statusLabels as $s => $label): ?>
-                                <option value="<?= $e($s) ?>"
-                                    <?= ($member['status'] ?? 'active') === $s ? 'selected' : '' ?>>
+                            <?php foreach ($statusOptions as $val => $label): ?>
+                                <option value="<?= $e($val) ?>"
+                                    <?= ($member['status'] ?? 'attivo') === $val ? 'selected' : '' ?>>
                                     <?= $e($label) ?>
                                 </option>
                             <?php endforeach; ?>
                         </select>
                     </div>
+                    <?php endif; ?>
 
+                    <!-- Categoria -->
                     <?php if (!empty($categories)): ?>
                     <div class="uk-margin">
-                        <label class="uk-form-label" for="category_id">Categoria</label>
+                        <label class="uk-form-label" for="category_id"><?= $e(__('members.category')) ?></label>
                         <select class="uk-select" id="category_id" name="category_id">
-                            <option value="">— Nessuna categoria —</option>
+                            <option value="">— <?= $e(__('members.filter_all_categories')) ?> —</option>
                             <?php foreach ($categories as $cat): ?>
                                 <option value="<?= (int) $cat['id'] ?>"
                                     <?= (int) ($member['category_id'] ?? 0) === (int) $cat['id'] ? 'selected' : '' ?>>
@@ -162,42 +204,156 @@ $content = (function () use (
                     </div>
                     <?php endif; ?>
 
+                    <!-- Data iscrizione -->
                     <div class="uk-margin">
-                        <label class="uk-form-label" for="joined_on">Data iscrizione *</label>
+                        <label class="uk-form-label" for="joined_on"><?= $e(__('members.joined_on')) ?> *</label>
                         <input class="uk-input" type="date" id="joined_on" name="joined_on"
                                value="<?= $v('joined_on', date('Y-m-d')) ?>" required>
                     </div>
+
+                    <!-- Note interne (staff only) -->
+                    <?php if ($isStaff): ?>
                     <div class="uk-margin">
-                        <label class="uk-form-label" for="resigned_on">Data dimissioni</label>
-                        <input class="uk-input" type="date" id="resigned_on" name="resigned_on"
-                               value="<?= $v('resigned_on') ?>">
+                        <label class="uk-form-label" for="notes">
+                            <?= $e(__('members.notes')) ?>
+                            <span class="uk-text-muted uk-text-small"> — solo staff</span>
+                        </label>
+                        <textarea class="uk-textarea" id="notes" name="notes"
+                                  rows="4" style="resize:vertical"><?= $v('notes') ?></textarea>
+                    </div>
+                    <?php endif; ?>
+
+                </div><!-- /card socio -->
+            </div><!-- /col 1/3 -->
+
+        </div><!-- /row 1 -->
+
+        <!-- =====================================================================
+             ROW 2: Contatti (larghezza piena)
+        ====================================================================== -->
+        <div class="uk-card uk-card-default uk-card-body uk-border-rounded uk-margin-bottom">
+            <h3 class="uk-card-title">
+                <span uk-icon="icon: mail; ratio: 1.1" class="uk-margin-small-right"></span>
+                <?= $e(__('members.box_contacts')) ?>
+            </h3>
+
+            <div class="uk-grid uk-grid-medium" uk-grid>
+
+                <!-- Colonna sinistra: contatti -->
+                <div class="uk-width-1-2@m">
+                    <div class="uk-margin">
+                        <label class="uk-form-label" for="email"><?= $e(__('members.email')) ?> *</label>
+                        <input class="uk-input" type="email" id="email" name="email"
+                               value="<?= $v('email') ?>" required autocomplete="email">
+                    </div>
+                    <div class="uk-margin">
+                        <label class="uk-form-label" for="phone"><?= $e(__('members.phone')) ?></label>
+                        <input class="uk-input" type="tel" id="phone" name="phone"
+                               value="<?= $v('phone') ?>">
+                    </div>
+                    <div class="uk-margin">
+                        <label class="uk-form-label" for="mobile"><?= $e(__('members.mobile')) ?></label>
+                        <input class="uk-input" type="tel" id="mobile" name="mobile"
+                               value="<?= $v('mobile') ?>">
                     </div>
                 </div>
-            </div>
 
-            <!-- Note (staff only) -->
-            <?php if ($isStaff): ?>
-            <div class="uk-width-1-1">
-                <div class="uk-card uk-card-default uk-card-body uk-border-rounded">
-                    <label class="uk-form-label" for="notes">
-                        Note <span class="uk-text-muted uk-text-small">(visibili solo agli amministratori)</span>
-                    </label>
-                    <textarea class="uk-textarea" id="notes" name="notes" rows="3"><?= $v('notes') ?></textarea>
+                <!-- Colonna destra: indirizzo -->
+                <div class="uk-width-1-2@m">
+                    <div class="uk-margin">
+                        <label class="uk-form-label" for="address"><?= $e(__('members.address')) ?></label>
+                        <input class="uk-input" type="text" id="address" name="address"
+                               value="<?= $v('address') ?>">
+                    </div>
+                    <div class="uk-grid uk-grid-small" uk-grid>
+                        <div class="uk-width-1-3">
+                            <label class="uk-form-label" for="postal_code"><?= $e(__('members.postal_code')) ?></label>
+                            <input class="uk-input" type="text" id="postal_code" name="postal_code"
+                                   value="<?= $v('postal_code') ?>" maxlength="10">
+                        </div>
+                        <div class="uk-width-expand">
+                            <label class="uk-form-label" for="city"><?= $e(__('members.city')) ?></label>
+                            <input class="uk-input" type="text" id="city" name="city"
+                                   value="<?= $v('city') ?>">
+                        </div>
+                    </div>
+                    <div class="uk-grid uk-grid-small uk-margin-small-top" uk-grid>
+                        <div class="uk-width-1-3">
+                            <label class="uk-form-label" for="province"><?= $e(__('members.province')) ?></label>
+                            <input class="uk-input" type="text" id="province" name="province"
+                                   value="<?= $v('province') ?>" maxlength="5"
+                                   style="text-transform:uppercase">
+                        </div>
+                        <div class="uk-width-1-3">
+                            <label class="uk-form-label" for="country"><?= $e(__('members.country')) ?></label>
+                            <input class="uk-input" type="text" id="country" name="country"
+                                   value="<?= $v('country', 'IT') ?>" maxlength="2"
+                                   style="text-transform:uppercase">
+                        </div>
+                    </div>
                 </div>
-            </div>
-            <?php endif; ?>
 
-        </div>
+            </div><!-- /contacts grid -->
+        </div><!-- /box contatti -->
 
-        <div class="uk-margin-top uk-flex uk-flex-between">
+        <!-- Actions -->
+        <div class="uk-flex uk-flex-between uk-margin-top">
             <a href="<?= $isEdit && !empty($member['id']) ? 'member.php?id=' . (int) $member['id'] : 'members.php' ?>"
                class="uk-button uk-button-default">
-                Annulla
+                <?= $e(__('members.cancel')) ?>
             </a>
-            <button class="uk-button uk-button-primary" type="submit">Salva</button>
+            <button class="uk-button uk-button-primary" type="submit">
+                <?= $e(__('members.save')) ?>
+            </button>
         </div>
 
     </form>
+
+    <script>
+    (function () {
+        // --- Genere: sync select → text input ---
+        var selSesso   = document.getElementById('sesso');
+        var selGenere  = document.getElementById('genere-select');
+        var inpGenere  = document.getElementById('genere');
+
+        // Init: mark select if current value matches a known option
+        var knownValues = ['Uomo','Donna','Non binario','Fluido','Preferisco non specificare'];
+        var current = inpGenere.value;
+        if (knownValues.indexOf(current) !== -1) {
+            selGenere.value = current;
+        } else if (current !== '') {
+            selGenere.value = '__other__';
+        }
+
+        selGenere.addEventListener('change', function () {
+            if (this.value === '__other__') {
+                inpGenere.value = '';
+                inpGenere.focus();
+            } else if (this.value !== '') {
+                inpGenere.value = this.value;
+            }
+        });
+
+        // --- Sesso → precompila Genere se non già valorizzato ---
+        selSesso.addEventListener('change', function () {
+            var map = { 'M': 'Uomo', 'F': 'Donna' };
+            var suggestion = map[this.value];
+            if (suggestion && inpGenere.value === '') {
+                inpGenere.value = suggestion;
+                selGenere.value = suggestion;
+            }
+        });
+
+        // --- Calcola CF (placeholder) ---
+        var btnCf = document.getElementById('btn-calc-cf');
+        var cfNote = document.getElementById('cf-note');
+        if (btnCf) {
+            btnCf.addEventListener('click', function () {
+                cfNote.hidden = false;
+            });
+        }
+    })();
+    </script>
 
     <?php
     return (string) ob_get_clean();
