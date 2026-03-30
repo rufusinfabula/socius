@@ -36,18 +36,11 @@ $statusColor = [
 ];
 
 $content = (function () use (
-    $members, $stats, $filters, $categories, $flashSuccess, $flashError,
+    $members, $stats, $filters, $categories,
     $e, $statusUkLabel, $statusStyle, $statusLabel, $statusColor
 ): string {
     ob_start();
     ?>
-
-    <?php if (!empty($flashSuccess)): ?>
-        <div class="uk-alert-success" uk-alert><a class="uk-alert-close" uk-close></a><p><?= $e($flashSuccess) ?></p></div>
-    <?php endif; ?>
-    <?php if (!empty($flashError)): ?>
-        <div class="uk-alert-danger" uk-alert><a class="uk-alert-close" uk-close></a><p><?= $e($flashError) ?></p></div>
-    <?php endif; ?>
 
     <!-- Header -->
     <div class="uk-flex uk-flex-between uk-flex-middle uk-margin-bottom">

@@ -49,7 +49,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'gender'      => trim((string) ($_POST['gender'] ?? '')) ?: null,
             'birth_date'  => ($_POST['birth_date'] ?? '') ?: null,
             'birth_place' => trim((string) ($_POST['birth_place'] ?? '')),
-            'fiscal_code' => strtoupper(trim((string) ($_POST['fiscal_code'] ?? ''))),
+            'fiscal_code' => strtoupper(trim((string) ($_POST['fiscal_code'] ?? ''))) ?: null,
             'email'       => trim((string) ($_POST['email'] ?? '')),
             'phone1'      => trim((string) ($_POST['phone1'] ?? '')),
             'phone2'      => trim((string) ($_POST['phone2'] ?? '')),
@@ -77,9 +77,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 csrf_regenerate();
                 flash_set('success', 'Socio aggiornato con successo.');
                 redirect('member.php?id=' . $id);
-            } catch (\Throwable $e) {
-                $error  = 'Errore durante il salvataggio: ' . $e->getMessage();
-                $member = array_merge($member, $data);
+            } catch (\Throwable $ex) {
+                $exMsg = $ex->getMessage();
+                if ((string) $ex->getCode() === '23000') {
+                    if (str_contains($exMsg, 'uq_email')) {
+                        $error = __('members.error_duplicate_email');
+                    } elseif (str_contains($exMsg, 'uq_fiscal_code')) {
+                        $error = __('members.error_duplicate_fiscal');
+                    } else {
+                        $error = __('members.error_duplicate_number');
+                    }
+                } else {
+                    $error = __('members.error_save_generic');
+                }
+                $errorDebug = \Socius\Core\Config::get('app.debug', false) ? $exMsg : null;
+                $member     = array_merge($member, $data);
             }
         }
     }
@@ -94,4 +106,5 @@ theme('member-form', [
     'categories'  => $categories,
     'isEdit'      => true,
     'error'       => $error,
+    'errorDebug'  => $errorDebug ?? null,
 ]);

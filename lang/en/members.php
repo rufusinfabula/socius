@@ -122,6 +122,21 @@ return [
     'back_to_profile'      => 'Back to profile',
 
     // -------------------------------------------------------------------------
+    // Memberships — short status
+    // -------------------------------------------------------------------------
+    'membership_active'        => 'Active membership',
+    'membership_not_active'    => 'No active membership',
+
+    // -------------------------------------------------------------------------
+    // Save errors
+    // -------------------------------------------------------------------------
+    'error_duplicate_email'    => 'This email is already registered.',
+    'error_duplicate_fiscal'   => 'This fiscal code is already registered.',
+    'error_duplicate_number'   => 'This number is already in use.',
+    'error_save_generic'       => 'Error while saving. Please try again.',
+    'error_debug_info'         => 'Technical detail (debug):',
+
+    // -------------------------------------------------------------------------
     // Confirmation messages
     // -------------------------------------------------------------------------
     'created_ok'           => 'Member created successfully (No. :number).',

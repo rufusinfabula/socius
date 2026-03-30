@@ -122,6 +122,21 @@ return [
     'back_to_profile'      => 'Torna al profilo',
 
     // -------------------------------------------------------------------------
+    // Tessere — stato sintetico
+    // -------------------------------------------------------------------------
+    'membership_active'        => 'Tessera attiva',
+    'membership_not_active'    => 'Nessuna tessera attiva',
+
+    // -------------------------------------------------------------------------
+    // Errori di salvataggio
+    // -------------------------------------------------------------------------
+    'error_duplicate_email'    => 'Questa email è già registrata.',
+    'error_duplicate_fiscal'   => 'Questo codice fiscale è già registrato.',
+    'error_duplicate_number'   => 'Questo numero è già in uso.',
+    'error_save_generic'       => 'Errore durante il salvataggio. Riprova.',
+    'error_debug_info'         => 'Dettaglio tecnico (debug):',
+
+    // -------------------------------------------------------------------------
     // Messaggi di conferma
     // -------------------------------------------------------------------------
     'created_ok'           => 'Socio creato con successo (N. :number).',

@@ -29,6 +29,12 @@ $content = (function () use (
         <div class="uk-alert-danger" uk-alert>
             <a class="uk-alert-close" uk-close></a>
             <p><?= $e($error) ?></p>
+            <?php if (!empty($errorDebug)): ?>
+                <p class="uk-text-small uk-text-muted uk-margin-remove-top">
+                    <?= $e(__('members.error_debug_info')) ?>
+                    <code><?= $e($errorDebug) ?></code>
+                </p>
+            <?php endif; ?>
         </div>
     <?php endif; ?>
 

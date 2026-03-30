@@ -25,7 +25,7 @@ $membershipStatusUkLabel = [
 ];
 
 $content = (function () use (
-    $member, $memberships, $payments, $currentUser, $flashSuccess, $flashError,
+    $member, $memberships, $payments, $currentUser,
     $e, $statusUkLabel, $statusStyle, $membershipStatusUkLabel
 ): string {
     ob_start();
@@ -34,13 +34,6 @@ $content = (function () use (
     $s = $member['status'] ?? 'active';
     $statusText = __('members.status_' . $s);
     ?>
-
-    <?php if (!empty($flashSuccess)): ?>
-        <div class="uk-alert-success" uk-alert><a class="uk-alert-close" uk-close></a><p><?= $e($flashSuccess) ?></p></div>
-    <?php endif; ?>
-    <?php if (!empty($flashError)): ?>
-        <div class="uk-alert-danger" uk-alert><a class="uk-alert-close" uk-close></a><p><?= $e($flashError) ?></p></div>
-    <?php endif; ?>
 
     <!-- Breadcrumb -->
     <ul class="uk-breadcrumb uk-margin-small-bottom">
@@ -163,26 +156,27 @@ $content = (function () use (
                     <?= $e(__('members.box_member')) ?>
                 </h3>
 
-                <!-- N. Tessera (prominente) -->
-                <div class="uk-margin">
-                    <p class="uk-text-muted uk-text-small uk-margin-remove-bottom"><?= $e(__('members.membership_number')) ?></p>
-                    <p class="uk-margin-remove-top">
-                        <code style="font-size:1.1rem"><?= $e($member['membership_number'] ?? '—') ?></code>
-                    </p>
-                </div>
+                <!-- N. Tessera + N. Socio (stesso peso visivo, due colonne) -->
+                <?php $isActive = in_array($s, ['active', 'in_renewal'], true); ?>
+                <div class="uk-grid uk-grid-small uk-margin" uk-grid>
 
-                <!-- N. Socio (identificatore permanente — meno prominente) -->
-                <?php if (!empty($member['member_number'])): ?>
-                <div class="uk-margin uk-margin-small-top">
-                    <p class="uk-text-muted uk-text-small uk-margin-remove-bottom"><?= $e(__('members.member_number')) ?></p>
-                    <p class="uk-margin-remove-top uk-text-small">
-                        <?= (int) $member['member_number'] ?>
-                        <span class="uk-text-muted" style="font-size:0.8rem">
-                            — <?= $e(__('members.member_number_permanent')) ?>
-                        </span>
-                    </p>
+                    <div class="uk-width-1-2">
+                        <p class="uk-text-muted uk-text-small uk-margin-remove-bottom"><?= $e(__('members.membership_number')) ?></p>
+                        <p class="uk-margin-remove"><code><?= $e($member['membership_number'] ?? '—') ?></code></p>
+                        <p class="uk-text-muted uk-margin-remove" style="font-size:0.75rem">
+                            <?= $isActive ? $e(__('members.membership_active')) : $e(__('members.membership_not_active')) ?>
+                        </p>
+                    </div>
+
+                    <div class="uk-width-1-2">
+                        <p class="uk-text-muted uk-text-small uk-margin-remove-bottom"><?= $e(__('members.member_number')) ?></p>
+                        <p class="uk-margin-remove"><code><?= isset($member['member_number']) ? (int) $member['member_number'] : '—' ?></code></p>
+                        <p class="uk-text-muted uk-margin-remove" style="font-size:0.75rem">
+                            <?= $e(__('members.member_number_permanent')) ?>
+                        </p>
+                    </div>
+
                 </div>
-                <?php endif; ?>
 
                 <!-- Stato -->
                 <div class="uk-margin">
