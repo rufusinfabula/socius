@@ -23,7 +23,10 @@
     "autoload": {
         "psr-4": {
             "Socius\\": "app/"
-        }
+        },
+        "files": [
+            "app/helpers.php"
+        ]
     },
     "autoload-dev": {
         "psr-4": {

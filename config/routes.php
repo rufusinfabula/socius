@@ -33,7 +33,11 @@ use Socius\Controllers\PaymentController;
 $router->get('/',              HomeController::class,    'index');
 $router->get('/login',         AuthController::class,    'showLogin');
 $router->post('/login',        AuthController::class,    'login');
-$router->get('/logout',        AuthController::class,    'logout');
+$router->get('/logout',             AuthController::class,    'logout');
+$router->get('/forgot-password',    AuthController::class,    'showForgotPassword');
+$router->post('/forgot-password',   AuthController::class,    'forgotPassword');
+$router->get('/reset-password/{token}',  AuthController::class,    'showResetPassword');
+$router->post('/reset-password/{token}', AuthController::class,    'resetPassword');
 
 // Members (auth required)
 $router->get('/members',              MemberController::class,   'index',   ['auth']);

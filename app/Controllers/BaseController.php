@@ -18,12 +18,25 @@ declare(strict_types=1);
 
 namespace Socius\Controllers;
 
+use Socius\Core\Response;
+
 /**
  * Base controller providing shared utilities (view rendering, redirects, JSON).
- *
- * @todo Implement view(), redirect(), json(), abort() helpers.
  */
 abstract class BaseController
 {
-    // placeholder
+    protected function view(string $template, array $data = [], int $status = 200): Response
+    {
+        return (new Response())->view($template, $data, $status);
+    }
+
+    protected function redirect(string $url, int $status = 302): Response
+    {
+        return (new Response())->redirect($url, $status);
+    }
+
+    protected function json(mixed $data, int $status = 200): Response
+    {
+        return (new Response())->json($data, $status);
+    }
 }

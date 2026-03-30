@@ -87,6 +87,22 @@ class Application
         error_reporting($debug ? E_ALL : E_ALL & ~E_DEPRECATED & ~E_STRICT);
         ini_set('display_errors', $debug ? '1' : '0');
         ini_set('log_errors', '1');
+
+        // Secure session cookie settings (must be called before session_start)
+        session_set_cookie_params([
+            'lifetime' => 0,
+            'path'     => '/',
+            'domain'   => '',
+            'secure'   => !$debug,
+            'httponly' => true,
+            'samesite' => 'Strict',
+        ]);
+
+        // Load global helper functions
+        $helpersFile = $this->basePath . '/app/helpers.php';
+        if (is_file($helpersFile)) {
+            require_once $helpersFile;
+        }
     }
 
     /**

@@ -16,17 +16,27 @@
 
 declare(strict_types=1);
 
-namespace Socius\Models;
-
-use Socius\Core\Database;
+use Socius\Core\Lang;
 
 /**
- * Base model with common CRUD helpers backed by PDO.
+ * Translate a string using dot-notation key.
+ *
+ * @param  string               $key     e.g. 'auth.login'
+ * @param  array<string, mixed> $replace Placeholder substitutions
  */
-abstract class BaseModel
-{
-    protected static function db(): Database
+if (!function_exists('__')) {
+    function __(string $key, array $replace = []): string
     {
-        return Database::getInstance();
+        return Lang::get($key, $replace);
+    }
+}
+
+/**
+ * Escape a string for safe HTML output.
+ */
+if (!function_exists('e')) {
+    function e(mixed $value): string
+    {
+        return htmlspecialchars((string) $value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
     }
 }
