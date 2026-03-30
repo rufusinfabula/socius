@@ -1,135 +1,83 @@
 # Socius
 
-**Socius** è un sistema web open source installabile per la gestione di associazioni.
-Permette di gestire soci, quote, eventi, comunicazioni e pagamenti da un'unica interfaccia.
+🇮🇹 [Leggi in italiano](README.it.md)
 
-## Requisiti
+**Open source association management system — self-hosted, installable like WordPress.**
 
+Socius is a web application for managing membership organizations. Designed to run on any standard PHP hosting with no special server requirements.
+
+## Features
+
+- Member registry with permanent member number and annual membership card
+- Annual renewal workflow with configurable dates and automatic reminders
+- Online payments via PayPal and Satispay (webhook-based reconciliation)
+- Member profile page (visible to admins and the member themselves)
+- Event management with public landing pages
+- Assembly and board meeting minutes (semi-automatic, export to PDF/DOCX)
+- Multi-user with roles: super admin, admin, secretary, member
+- GDPR consent management
+- Full audit log
+- Multi-language interface (Italian and English included)
+- Multi-theme support (UIkit default, Bootstrap and Tailwind ready)
+- Import members from CSV/Excel
+- Automatic email and WhatsApp notifications
+
+## Requirements
+
+Same as WordPress:
 - PHP 8.1+
-- MySQL 8.0+ / MariaDB 10.6+
-- Composer
-- Web server: Apache (mod_rewrite) o Nginx
-- Estensioni PHP: `pdo`, `pdo_mysql`, `mbstring`, `json`, `openssl`
+- MySQL 8.0+ or MariaDB 10.6+
+- Any standard shared hosting
 
-## Installazione
+## Installation
 
-```bash
-# 1. Clona il repository nella document root del tuo server
-git clone https://github.com/rufusinfabula/socius.git .
+1. Download the latest release from the Releases page
+2. Upload to your server document root
+3. Visit your-domain.com/install and follow the guided setup wizard
+4. Remove or block the /install folder after setup
 
-# 2. Installa le dipendenze
-composer install --no-dev --optimize-autoloader
+## URL Structure
 
-# 3. Copia il file di configurazione
-cp .env.example .env
-
-# 4. Modifica .env con i tuoi parametri (DB, SMTP, pagamenti…)
-
-# 5. Avvia il wizard di installazione via browser
-# https://tuo-dominio.org/install
-```
-
-## URL Configuration
-
-Socius supporta due modalità di routing, selezionabili in base all'hosting disponibile.
-
-### Modalità 1 — Query string (default, funziona ovunque)
-
-Nessuna configurazione server richiesta. Funziona su qualsiasi hosting condiviso.
+Socius works out of the box on any hosting with no server configuration needed:
 
 ```
-https://tuo-dominio.org/index.php?route=login
-https://tuo-dominio.org/index.php?route=soci
-https://tuo-dominio.org/index.php?route=soci/123
-https://tuo-dominio.org/index.php?route=soci/123/modifica
+your-domain.com/members.php
+your-domain.com/member.php?id=1
+your-domain.com/member-edit.php?id=1
 ```
 
-Nessuna modifica a `.htaccess` o alla configurazione Nginx è necessaria.
+No mod_rewrite or Nginx rules required.
 
----
+## Themes
 
-### Modalità 2 — URL pulite (opzionale)
+The active theme is configurable from the back-end settings panel.
 
-Richiede configurazione del server web. Attiva il blocco `mod_rewrite` in
-`public/.htaccess` (Apache) oppure aggiungi il blocco `location` in Nginx (vedi sotto).
+| Theme | Status |
+|---|---|
+| UIkit 3 | Default |
+| Bootstrap 5 | Placeholder — contributions welcome |
+| Tailwind CSS | Placeholder — contributions welcome |
 
-```
-https://tuo-dominio.org/login
-https://tuo-dominio.org/soci
-https://tuo-dominio.org/soci/123
-https://tuo-dominio.org/soci/123/modifica
-```
+To create a new theme copy `public/themes/uikit/`, rename it, and replace
+the HTML with your framework of choice.
 
-#### Apache
+## Languages
 
-Il file `public/.htaccess` contiene già il blocco necessario, racchiuso in
-`<IfModule mod_rewrite.c>`. Assicurati che:
+Italian and English are included. To add a new language:
+1. Copy `lang/en/`
+2. Rename the folder with the ISO language code (e.g. `lang/de/`)
+3. Translate the values in each PHP file
+4. The language appears automatically in the back-end selector
 
-- `mod_rewrite` sia abilitato (`a2enmod rewrite`)
-- La direttiva `AllowOverride All` (o almeno `AllowOverride FileInfo`) sia attiva
-  per la tua document root in `httpd.conf` / `000-default.conf`
+## Contributing
 
-```apache
-<Directory /var/www/html/public>
-    AllowOverride All
-</Directory>
-```
+- Translate the interface into a new language
+- Build a new theme (Bootstrap, Tailwind, or anything else)
+- Report bugs via Issues
+- Submit pull requests
 
-#### Nginx
+All modified versions distributed to others must be released under GPL v3.
 
-Aggiungi questo blocco `location` al tuo virtualhost (la document root deve
-puntare a `public/`):
+## License
 
-```nginx
-server {
-    listen 80;
-    server_name tuo-dominio.org;
-    root /var/www/socius/public;
-    index index.php;
-
-    location / {
-        try_files $uri $uri/ /index.php?$query_string;
-    }
-
-    location ~ \.php$ {
-        fastcgi_pass unix:/run/php/php8.3-fpm.sock;
-        fastcgi_param SCRIPT_FILENAME $realpath_root$fastcgi_script_name;
-        include fastcgi_params;
-    }
-
-    location ~ /\.(env|log|sh|sql|bak|cfg|ini) {
-        deny all;
-    }
-}
-```
-
----
-
-## Struttura del progetto
-
-```
-socius/
-├── app/
-│   ├── Core/           # Kernel, router, container DI, request/response
-│   ├── Controllers/    # HTTP controllers
-│   ├── Models/         # Modelli dati (PDO)
-│   ├── Services/       # Logica di business
-│   ├── Jobs/           # Task asincroni / code
-│   └── Views/          # Template PHP
-├── config/             # File di configurazione
-├── install/            # Wizard di installazione web
-├── lang/
-│   ├── it/             # Italiano
-│   └── en/             # English
-├── public/             # Document root (index.php, .htaccess)
-├── storage/
-│   ├── cache/
-│   ├── exports/
-│   ├── logs/
-│   └── uploads/
-└── tests/
-```
-
-## Licenza
-
-[GNU General Public License v3.0](LICENSE)
+GNU General Public License v3.0
