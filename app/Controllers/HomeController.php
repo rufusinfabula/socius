@@ -18,12 +18,27 @@ declare(strict_types=1);
 
 namespace Socius\Controllers;
 
+use Socius\Core\Middleware;
+use Socius\Core\Request;
+use Socius\Core\Response;
+use Socius\Models\User;
+
 /**
  * Dashboard / home page.
- *
- * @todo Implement index() action returning aggregated stats for the dashboard.
  */
 class HomeController extends BaseController
 {
-    // placeholder
+    public function index(Request $request, array $params): Response
+    {
+        if (!Middleware::isAuthenticated()) {
+            return $this->redirect('/login');
+        }
+
+        $user = User::findById((int) Middleware::authUserId());
+
+        return $this->view('themes/uikit/home/dashboard', [
+            'activeNav' => 'dashboard',
+            'user'      => $user,
+        ]);
+    }
 }
