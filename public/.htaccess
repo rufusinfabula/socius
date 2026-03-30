@@ -1,15 +1,21 @@
 Options -Indexes
 
-# Rewrite all requests to index.php (front controller pattern)
+# =============================================================================
+# URL Rewriting — OPTIONAL (clean URLs)
+# =============================================================================
+# Socius works without this block: use ?route=path query-string routing.
+# Enable this block only if mod_rewrite is available and you want clean URLs.
+# See README.md § "URL Configuration" for details.
+# =============================================================================
 <IfModule mod_rewrite.c>
     RewriteEngine On
     RewriteBase /
 
-    # Allow direct access to real files and directories
+    # Allow direct access to real files and directories (css, js, images…)
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_FILENAME} !-d
 
-    # Route everything else through index.php
+    # Route everything else through the front controller
     RewriteRule ^ index.php [L,QSA]
 </IfModule>
 

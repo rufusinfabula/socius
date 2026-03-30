@@ -104,7 +104,7 @@ class Router
     public function dispatch(Request $request): Response
     {
         $method = $request->method();
-        $path   = $this->normalizePath($request->uri());
+        $path   = $this->normalizePath($request->path());
 
         foreach ($this->routes[$method] ?? [] as $pattern => $route) {
             $params = $this->matchPattern($pattern, $path);

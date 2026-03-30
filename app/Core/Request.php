@@ -146,6 +146,34 @@ class Request
     }
 
     /**
+     * Return the normalised request path for routing.
+     *
+     * Priority:
+     *   1. Query-string mode  — $_GET['route'] is present.
+     *      Works on any hosting without server configuration.
+     *      e.g. index.php?route=soci/123  →  /soci/123
+     *
+     *   2. Clean-URL mode — REQUEST_URI path is used.
+     *      Requires mod_rewrite (Apache) or try_files (Nginx).
+     *      e.g. /soci/123  →  /soci/123
+     *
+     * The Router calls this method instead of uri() so that both
+     * modes resolve to the same pattern-matching path.
+     */
+    public function path(): string
+    {
+        // Mode 1: query-string routing (?route=...)
+        $route = trim((string) ($this->queryParams['route'] ?? ''), '/');
+        if ($route !== '') {
+            return '/' . $route;
+        }
+
+        // Mode 2: clean URL — extract path from REQUEST_URI
+        $path = parse_url($this->serverParams['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?? '/';
+        return (string) $path;
+    }
+
+    /**
      * Return the client IP address.
      * Trusts X-Forwarded-For as first candidate; applications behind a trusted
      * reverse proxy should strip untrusted forwarded headers at the proxy level.
