@@ -29,3 +29,7 @@ Thumbs.db
 # Cache
 /storage/cache/*
 !/storage/cache/.gitkeep
+
+# Debug / one-time scripts
+/public/debug.php
+/public/opcache-reset.php
