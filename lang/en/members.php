@@ -58,12 +58,11 @@ return [
     // -------------------------------------------------------------------------
     // Form fields — Membership
     // -------------------------------------------------------------------------
-    'status_attivo'        => 'Active',
-    'status_in_rinnovo'    => 'Renewal pending',
-    'status_non_rinnovato' => 'Not renewed',
-    'status_decaduto'      => 'Lapsed',
-    'status_onorario'      => 'Honorary',
-    'status_sospeso'       => 'Suspended',
+    'status_active'        => 'Active',
+    'status_suspended'     => 'Suspended',
+    'status_expired'       => 'Expired',
+    'status_resigned'      => 'Resigned',
+    'status_deceased'      => 'Deceased',
     'resigned_on'          => 'Resignation date',
     'notes'                => 'Notes (admin only)',
 

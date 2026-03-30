@@ -9,11 +9,11 @@ $statusUkLabel = [
     'deceased'  => 'secondary',
 ];
 $statusLabel = [
-    'active'    => 'Attivo',
-    'suspended' => 'Sospeso',
-    'expired'   => 'Scaduto',
-    'resigned'  => 'Dimesso',
-    'deceased'  => 'Deceduto',
+    'active'    => __('members.status_active'),
+    'suspended' => __('members.status_suspended'),
+    'expired'   => __('members.status_expired'),
+    'resigned'  => __('members.status_resigned'),
+    'deceased'  => __('members.status_deceased'),
 ];
 $statusColor = [
     'active'    => '#32d296',

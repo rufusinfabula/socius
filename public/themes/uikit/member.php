@@ -2,12 +2,11 @@
 $e = fn($v) => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
 
 $statusUkLabel = [
-    'attivo'        => 'success',
-    'in_rinnovo'    => 'warning',
-    'non_rinnovato' => 'danger',
-    'decaduto'      => 'danger',
-    'onorario'      => 'primary',
-    'sospeso'       => 'default',
+    'active'    => 'success',
+    'suspended' => 'default',
+    'expired'   => 'danger',
+    'resigned'  => 'warning',
+    'deceased'  => 'secondary',
 ];
 
 $membershipStatusUkLabel = [
@@ -24,9 +23,8 @@ $content = (function () use (
     ob_start();
     $isSuperAdmin = (int) ($currentUser['role_id'] ?? 4) === 1;
     $isStaff      = (int) ($currentUser['role_id'] ?? 4) <= 3;
-    $s = $member['status'] ?? 'attivo';
-    $statusLangKey = 'members.status_' . $s;
-    $statusText = __($statusLangKey) !== $statusLangKey ? __($statusLangKey) : $s;
+    $s = $member['status'] ?? 'active';
+    $statusText = __('members.status_' . $s);
     ?>
 
     <?php if (!empty($flashSuccess)): ?>

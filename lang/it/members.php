@@ -58,12 +58,11 @@ return [
     // -------------------------------------------------------------------------
     // Campi form — Socio
     // -------------------------------------------------------------------------
-    'status_attivo'        => 'Attivo',
-    'status_in_rinnovo'    => 'In rinnovo',
-    'status_non_rinnovato' => 'Non rinnovato',
-    'status_decaduto'      => 'Decaduto',
-    'status_onorario'      => 'Onorario',
-    'status_sospeso'       => 'Sospeso',
+    'status_active'        => 'Attivo',
+    'status_suspended'     => 'Sospeso',
+    'status_expired'       => 'Scaduto',
+    'status_resigned'      => 'Dimesso',
+    'status_deceased'      => 'Deceduto',
     'resigned_on'          => 'Data recesso',
     'notes'                => 'Note (solo admin)',
 

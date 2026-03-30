@@ -8,12 +8,11 @@ $action  = $isEdit
 $v = fn(string $field, mixed $default = '') => $e($member[$field] ?? $default);
 
 $statusOptions = [
-    'attivo'        => __('members.status_attivo'),
-    'in_rinnovo'    => __('members.status_in_rinnovo'),
-    'non_rinnovato' => __('members.status_non_rinnovato'),
-    'decaduto'      => __('members.status_decaduto'),
-    'onorario'      => __('members.status_onorario'),
-    'sospeso'       => __('members.status_sospeso'),
+    'active'    => __('members.status_active'),
+    'suspended' => __('members.status_suspended'),
+    'expired'   => __('members.status_expired'),
+    'resigned'  => __('members.status_resigned'),
+    'deceased'  => __('members.status_deceased'),
 ];
 
 $content = (function () use (
@@ -180,7 +179,7 @@ $content = (function () use (
                         <select class="uk-select" id="status" name="status">
                             <?php foreach ($statusOptions as $val => $label): ?>
                                 <option value="<?= $e($val) ?>"
-                                    <?= ($member['status'] ?? 'attivo') === $val ? 'selected' : '' ?>>
+                                    <?= ($member['status'] ?? 'active') === $val ? 'selected' : '' ?>>
                                     <?= $e($label) ?>
                                 </option>
                             <?php endforeach; ?>
