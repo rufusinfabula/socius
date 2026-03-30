@@ -98,25 +98,25 @@ class MembershipCategory extends BaseModel
     {
         // 1. Exact year
         $row = self::db()->fetch(
-            'SELECT quota FROM membership_category_fees
-              WHERE category_id = ? AND anno = ?
+            'SELECT fee FROM membership_category_fees
+              WHERE category_id = ? AND year = ?
               LIMIT 1',
             [$categoryId, $anno]
         );
         if ($row !== null) {
-            return (float) $row['quota'];
+            return (float) $row['fee'];
         }
 
         // 2. Most recent earlier year
         $row = self::db()->fetch(
-            'SELECT quota FROM membership_category_fees
-              WHERE category_id = ? AND anno < ?
-              ORDER BY anno DESC
+            'SELECT fee FROM membership_category_fees
+              WHERE category_id = ? AND year < ?
+              ORDER BY year DESC
               LIMIT 1',
             [$categoryId, $anno]
         );
         if ($row !== null) {
-            return (float) $row['quota'];
+            return (float) $row['fee'];
         }
 
         // 3. Fallback to category's own quota_annuale
@@ -139,12 +139,12 @@ class MembershipCategory extends BaseModel
     ): bool {
         self::db()->query(
             'INSERT INTO membership_category_fees
-                 (category_id, anno, quota, note, approvata_da)
+                 (category_id, year, fee, note, approved_by)
              VALUES (?, ?, ?, ?, ?)
              ON DUPLICATE KEY UPDATE
-                 quota        = VALUES(quota),
-                 note         = VALUES(note),
-                 approvata_da = VALUES(approvata_da)',
+                 fee         = VALUES(fee),
+                 note        = VALUES(note),
+                 approved_by = VALUES(approved_by)',
             [$categoryId, $anno, $quota, $note ?: null, $userId]
         );
         return true;
@@ -160,9 +160,9 @@ class MembershipCategory extends BaseModel
         return self::db()->fetchAll(
             'SELECT f.*, u.name AS approved_by_name
                FROM membership_category_fees f
-               LEFT JOIN users u ON u.id = f.approvata_da
+               LEFT JOIN users u ON u.id = f.approved_by
               WHERE f.category_id = ?
-              ORDER BY f.anno DESC',
+              ORDER BY f.year DESC',
             [$categoryId]
         );
     }

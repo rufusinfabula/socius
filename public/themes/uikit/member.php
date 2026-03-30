@@ -116,7 +116,7 @@ $content = (function () use (
                         <p class="uk-margin-remove-top">
                             <?php
                             $sexMap = ['M' => __('members.sex_m'), 'F' => __('members.sex_f')];
-                            echo $e($sexMap[$member['sesso'] ?? ''] ?? '—');
+                            echo $e($sexMap[$member['sex'] ?? ''] ?? '—');
                             ?>
                         </p>
                     </div>
@@ -124,7 +124,7 @@ $content = (function () use (
                     <!-- Genere -->
                     <div class="uk-width-2-3@s">
                         <p class="uk-text-muted uk-text-small uk-margin-remove-bottom"><?= $e(__('members.gender')) ?></p>
-                        <p class="uk-margin-remove-top"><?= $e($member['genere'] ?? '—') ?></p>
+                        <p class="uk-margin-remove-top"><?= $e($member['gender'] ?? '—') ?></p>
                     </div>
 
                     <!-- Data di nascita -->

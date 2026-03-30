@@ -23,7 +23,10 @@ return [
     // -------------------------------------------------------------------------
     // Colonne tabella
     // -------------------------------------------------------------------------
-    'membership_number'    => 'N. Tessera',
+    'member_number'              => 'N. Socio',
+    'member_number_assigned'     => 'Numero socio assegnato: :number',
+    'member_number_permanent'    => 'Il numero socio è permanente e non modificabile.',
+    'membership_number'          => 'N. Tessera',
     'name'                 => 'Nome',
     'surname'              => 'Cognome',
     'full_name'            => 'Nome e cognome',

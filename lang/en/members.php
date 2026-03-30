@@ -23,7 +23,10 @@ return [
     // -------------------------------------------------------------------------
     // Table columns
     // -------------------------------------------------------------------------
-    'membership_number'    => 'Card No.',
+    'member_number'              => 'Member No.',
+    'member_number_assigned'     => 'Member number assigned: :number',
+    'member_number_permanent'    => 'The member number is permanent and cannot be changed.',
+    'membership_number'          => 'Card No.',
     'name'                 => 'First name',
     'surname'              => 'Last name',
     'full_name'            => 'Full name',

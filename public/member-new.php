@@ -29,8 +29,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $data = [
             'surname'     => trim((string) ($_POST['surname'] ?? '')),
             'name'        => trim((string) ($_POST['name'] ?? '')),
-            'sesso'       => in_array($_POST['sesso'] ?? '', ['M', 'F'], true) ? $_POST['sesso'] : null,
-            'genere'      => trim((string) ($_POST['genere'] ?? '')) ?: null,
+            'sex'         => in_array($_POST['sex'] ?? '', ['M', 'F'], true) ? $_POST['sex'] : null,
+            'gender'      => trim((string) ($_POST['gender'] ?? '')) ?: null,
             'birth_date'  => ($_POST['birth_date'] ?? '') ?: null,
             'birth_place' => trim((string) ($_POST['birth_place'] ?? '')),
             'fiscal_code' => strtoupper(trim((string) ($_POST['fiscal_code'] ?? ''))),
@@ -56,10 +56,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $formData = $data;
         } else {
             try {
-                $newId = Member::create($data);
+                $newId     = Member::create($data);
+                $created   = Member::findById($newId);
+                $memberNum = $created['member_number'] ?? '';
                 Member::audit(current_user_id(), 'create', $newId, null, $data, client_ip());
                 csrf_regenerate();
-                flash_set('success', 'Socio creato con successo.');
+                flash_set('success', 'Socio creato con successo — N. socio: ' . $memberNum);
                 redirect('member.php?id=' . $newId);
             } catch (\Throwable $e) {
                 $error    = 'Errore durante il salvataggio: ' . $e->getMessage();

@@ -79,24 +79,24 @@ $content = (function () use (
                                    value="<?= $v('name') ?>" required>
                         </div>
 
-                        <!-- Sesso -->
+                        <!-- Sex -->
                         <div class="uk-width-1-3@s">
-                            <label class="uk-form-label" for="sesso"><?= $e(__('members.sex')) ?></label>
-                            <select class="uk-select" id="sesso" name="sesso">
+                            <label class="uk-form-label" for="sex"><?= $e(__('members.sex')) ?></label>
+                            <select class="uk-select" id="sex" name="sex">
                                 <option value="">—</option>
-                                <option value="M" <?= ($member['sesso'] ?? '') === 'M' ? 'selected' : '' ?>>
+                                <option value="M" <?= ($member['sex'] ?? '') === 'M' ? 'selected' : '' ?>>
                                     <?= $e(__('members.sex_m')) ?>
                                 </option>
-                                <option value="F" <?= ($member['sesso'] ?? '') === 'F' ? 'selected' : '' ?>>
+                                <option value="F" <?= ($member['sex'] ?? '') === 'F' ? 'selected' : '' ?>>
                                     <?= $e(__('members.sex_f')) ?>
                                 </option>
                             </select>
                         </div>
 
-                        <!-- Genere -->
+                        <!-- Gender -->
                         <div class="uk-width-2-3@s">
-                            <label class="uk-form-label" for="genere"><?= $e(__('members.gender')) ?></label>
-                            <select class="uk-select" id="genere-select">
+                            <label class="uk-form-label" for="gender"><?= $e(__('members.gender')) ?></label>
+                            <select class="uk-select" id="gender-select">
                                 <option value="">—</option>
                                 <option value="Uomo"><?= $e(__('members.gender_man')) ?></option>
                                 <option value="Donna"><?= $e(__('members.gender_woman')) ?></option>
@@ -105,8 +105,8 @@ $content = (function () use (
                                 <option value="Preferisco non specificare"><?= $e(__('members.gender_not_specified')) ?></option>
                                 <option value="__other__"><?= $e(__('members.gender_other')) ?></option>
                             </select>
-                            <input class="uk-input uk-margin-small-top" type="text" id="genere" name="genere"
-                                   value="<?= $v('genere') ?>"
+                            <input class="uk-input uk-margin-small-top" type="text" id="gender" name="gender"
+                                   value="<?= $v('gender') ?>"
                                    placeholder="<?= $e(__('members.gender')) ?>">
                             <p class="uk-text-small uk-text-muted uk-margin-remove-top" style="font-size:0.8rem">
                                 <?= $e(__('members.gender_gdpr_note')) ?>
@@ -157,14 +157,30 @@ $content = (function () use (
                         <?= $e(__('members.box_member')) ?>
                     </h3>
 
-                    <!-- Numero socio (read-only se modifica) -->
-                    <?php if ($isEdit && !empty($member['membership_number'])): ?>
+                    <!-- N. Socio + N. Tessera (read-only in edit mode) -->
+                    <?php if ($isEdit): ?>
+
+                    <?php if (!empty($member['member_number'])): ?>
+                    <div class="uk-margin">
+                        <label class="uk-form-label"><?= $e(__('members.member_number')) ?></label>
+                        <div class="uk-input" style="background:#f8f8f8;cursor:default;color:#666">
+                            <strong><?= (int) $member['member_number'] ?></strong>
+                        </div>
+                        <p class="uk-text-small uk-text-muted uk-margin-remove-top" style="font-size:0.8rem">
+                            <?= $e(__('members.member_number_permanent')) ?>
+                        </p>
+                    </div>
+                    <?php endif; ?>
+
+                    <?php if (!empty($member['membership_number'])): ?>
                     <div class="uk-margin">
                         <label class="uk-form-label"><?= $e(__('members.membership_number')) ?></label>
                         <div class="uk-input" style="background:#f8f8f8;cursor:default;color:#666">
                             <code><?= $v('membership_number') ?></code>
                         </div>
                     </div>
+                    <?php endif; ?>
+
                     <?php else: ?>
                     <div class="uk-margin">
                         <label class="uk-form-label"><?= $e(__('members.membership_number')) ?></label>
@@ -312,10 +328,10 @@ $content = (function () use (
 
     <script>
     (function () {
-        // --- Genere: sync select → text input ---
-        var selSesso   = document.getElementById('sesso');
-        var selGenere  = document.getElementById('genere-select');
-        var inpGenere  = document.getElementById('genere');
+        // --- Gender: sync select → text input ---
+        var selSesso   = document.getElementById('sex');
+        var selGenere  = document.getElementById('gender-select');
+        var inpGenere  = document.getElementById('gender');
 
         // Init: mark select if current value matches a known option
         var knownValues = ['Uomo','Donna','Non binario','Fluido','Preferisco non specificare'];

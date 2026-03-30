@@ -173,9 +173,10 @@ class Member extends BaseModel
     public static function create(array $data): int
     {
         $data['membership_number'] = self::getNextMembershipNumber();
+        $data['member_number']     = self::getNextMemberNumber();
         $id = self::db()->insert('members', $data);
 
-        // Advance the counter in settings
+        // Advance the membership number counter in settings
         self::db()->query(
             "UPDATE settings SET `value` = CAST(`value` AS UNSIGNED) + 1 WHERE `key` = 'members.next_number'"
         );
@@ -191,6 +192,34 @@ class Member extends BaseModel
     public static function update(int $id, array $data): bool
     {
         return self::db()->update('members', $data, ['id' => $id]) > 0;
+    }
+
+    // =========================================================================
+    // Member number helpers
+    // =========================================================================
+
+    /**
+     * Return the next available permanent member_number.
+     *
+     * Uses MAX(member_number) + 1 when members already exist,
+     * otherwise falls back to settings 'members.number_start' (default 1).
+     * member_number is assigned at creation and never changed.
+     */
+    public static function getNextMemberNumber(): int
+    {
+        $max = (int) (self::db()->fetch(
+            'SELECT COALESCE(MAX(member_number), 0) AS m FROM members'
+        )['m'] ?? 0);
+
+        if ($max > 0) {
+            return $max + 1;
+        }
+
+        $start = (int) (self::db()->fetch(
+            "SELECT `value` FROM settings WHERE `key` = 'members.number_start' LIMIT 1"
+        )['value'] ?? 1);
+
+        return max(1, $start);
     }
 
     // =========================================================================

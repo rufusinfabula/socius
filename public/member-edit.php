@@ -45,8 +45,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $data    = [
             'surname'     => trim((string) ($_POST['surname'] ?? '')),
             'name'        => trim((string) ($_POST['name'] ?? '')),
-            'sesso'       => in_array($_POST['sesso'] ?? '', ['M', 'F'], true) ? $_POST['sesso'] : null,
-            'genere'      => trim((string) ($_POST['genere'] ?? '')) ?: null,
+            'sex'         => in_array($_POST['sex'] ?? '', ['M', 'F'], true) ? $_POST['sex'] : null,
+            'gender'      => trim((string) ($_POST['gender'] ?? '')) ?: null,
             'birth_date'  => ($_POST['birth_date'] ?? '') ?: null,
             'birth_place' => trim((string) ($_POST['birth_place'] ?? '')),
             'fiscal_code' => strtoupper(trim((string) ($_POST['fiscal_code'] ?? ''))),

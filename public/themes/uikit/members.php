@@ -116,18 +116,20 @@ $content = (function () use (
         <table class="uk-table uk-table-striped uk-table-hover uk-table-small">
             <thead>
                 <tr>
-                    <th>N. Tessera</th>
-                    <th>Cognome</th>
-                    <th>Nome</th>
-                    <th>Email</th>
-                    <th>Stato</th>
-                    <th>Categoria</th>
-                    <th>Azioni</th>
+                    <th><?= $e(__('members.member_number')) ?></th>
+                    <th><?= $e(__('members.membership_number')) ?></th>
+                    <th><?= $e(__('members.surname')) ?></th>
+                    <th><?= $e(__('members.name')) ?></th>
+                    <th><?= $e(__('members.email')) ?></th>
+                    <th><?= $e(__('members.status')) ?></th>
+                    <th><?= $e(__('members.category')) ?></th>
+                    <th><?= $e(__('members.actions')) ?></th>
                 </tr>
             </thead>
             <tbody>
                 <?php foreach ($members['items'] as $m): ?>
                 <tr>
+                    <td><?= isset($m['member_number']) ? (int) $m['member_number'] : '—' ?></td>
                     <td><code><?= $e($m['membership_number']) ?></code></td>
                     <td><?= $e($m['surname']) ?></td>
                     <td><?= $e($m['name']) ?></td>
