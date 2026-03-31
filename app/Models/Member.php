@@ -73,7 +73,7 @@ class Member extends BaseModel
 
         $offset = ($page - 1) * $perPage;
         $items  = self::db()->fetchAll(
-            "SELECT m.*, mc.label AS category_name
+            "SELECT m.*, mc.nome AS category_name
                FROM members m
                LEFT JOIN membership_categories mc ON mc.id = m.category_id
                {$whereClause}
@@ -99,7 +99,7 @@ class Member extends BaseModel
     public static function findById(int $id): ?array
     {
         $row = self::db()->fetch(
-            'SELECT m.*, mc.label AS category_name
+            'SELECT m.*, mc.nome AS category_name
                FROM members m
                LEFT JOIN membership_categories mc ON mc.id = m.category_id
               WHERE m.id = ?
@@ -149,7 +149,7 @@ class Member extends BaseModel
     {
         $like = '%' . $query . '%';
         return self::db()->fetchAll(
-            'SELECT m.*, mc.label AS category_name
+            'SELECT m.*, mc.nome AS category_name
                FROM members m
                LEFT JOIN membership_categories mc ON mc.id = m.category_id
               WHERE m.name LIKE ? OR m.surname LIKE ? OR m.email LIKE ? OR m.membership_number LIKE ?
@@ -346,7 +346,7 @@ class Member extends BaseModel
     public static function getMemberships(int $memberId): array
     {
         return self::db()->fetchAll(
-            'SELECT ms.*, mc.label AS category_name
+            'SELECT ms.*, mc.nome AS category_name
                FROM memberships ms
                LEFT JOIN membership_categories mc ON mc.id = ms.category_id
               WHERE ms.member_id = ?

@@ -87,7 +87,7 @@ $content = (function () use (
                     <?php foreach ($categories as $cat): ?>
                         <option value="<?= (int) $cat['id'] ?>"
                             <?= (int) $filters['category'] === (int) $cat['id'] ? 'selected' : '' ?>>
-                            <?= $e($cat['label']) ?>
+                            <?= $e($cat['nome']) ?>
                         </option>
                     <?php endforeach; ?>
                 </select>

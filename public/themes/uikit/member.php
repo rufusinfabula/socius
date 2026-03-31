@@ -203,6 +203,12 @@ $content = (function () use (
                     </p>
                 </div>
 
+                <!-- Data iscrizione -->
+                <div class="uk-margin">
+                    <p class="uk-text-muted uk-text-small uk-margin-remove-bottom"><?= $e(__('members.joined_on')) ?></p>
+                    <p class="uk-margin-remove-top"><?= $e($member['joined_on'] ?? '—') ?></p>
+                </div>
+
                 <!-- Categoria -->
                 <?php if (!empty($member['category_name'])): ?>
                 <div class="uk-margin">
@@ -210,12 +216,6 @@ $content = (function () use (
                     <p class="uk-margin-remove-top"><?= $e($member['category_name']) ?></p>
                 </div>
                 <?php endif; ?>
-
-                <!-- Data iscrizione -->
-                <div class="uk-margin">
-                    <p class="uk-text-muted uk-text-small uk-margin-remove-bottom"><?= $e(__('members.joined_on')) ?></p>
-                    <p class="uk-margin-remove-top"><?= $e($member['joined_on'] ?? '—') ?></p>
-                </div>
 
                 <!-- Data recesso -->
                 <?php if (!empty($member['resigned_on'])): ?>
