@@ -28,7 +28,7 @@ class MembershipCategory extends BaseModel
     // =========================================================================
 
     /**
-     * Return all categories, ordered by ordine then nome.
+     * Return all categories, ordered by sort_order then label.
      *
      * @param  bool $onlyActive  When true, exclude inactive categories.
      * @return list<array<string, mixed>>
@@ -37,7 +37,7 @@ class MembershipCategory extends BaseModel
     {
         $where = $onlyActive ? 'WHERE is_active = 1' : '';
         return self::db()->fetchAll(
-            "SELECT * FROM membership_categories {$where} ORDER BY ordine ASC, nome ASC"
+            "SELECT * FROM membership_categories {$where} ORDER BY sort_order ASC, label ASC"
         );
     }
 
@@ -90,7 +90,7 @@ class MembershipCategory extends BaseModel
      * Resolution order:
      *   1. Exact match in membership_category_fees for (category_id, anno)
      *   2. Most recent earlier year in membership_category_fees
-     *   3. quota_annuale from the category row itself
+     *   3. annual_fee from the category row itself
      *
      * @return float|null  null only when the category does not exist at all
      */
@@ -119,9 +119,9 @@ class MembershipCategory extends BaseModel
             return (float) $row['fee'];
         }
 
-        // 3. Fallback to category's own quota_annuale
+        // 3. Fallback to category's own annual_fee
         $cat = self::findById($categoryId);
-        return $cat !== null ? (float) $cat['quota_annuale'] : null;
+        return $cat !== null ? (float) $cat['annual_fee'] : null;
     }
 
     /**

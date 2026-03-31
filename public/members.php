@@ -36,7 +36,7 @@ try {
 
 try {
     $db         = Database::getInstance();
-    $categories = $db->fetchAll('SELECT id, label FROM membership_categories ORDER BY label ASC');
+    $categories = $db->fetchAll('SELECT id, label FROM membership_categories ORDER BY sort_order ASC, label ASC');
 } catch (\Throwable) {}
 
 theme('members', [

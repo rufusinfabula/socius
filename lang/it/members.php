@@ -99,7 +99,8 @@ return [
     // -------------------------------------------------------------------------
     // Filtri e ricerca
     // -------------------------------------------------------------------------
-    'select_category'      => '— Seleziona categoria —',
+    'select_category'         => '— Seleziona categoria —',
+    'no_categories_available' => 'Nessuna categoria disponibile — creane una nelle impostazioni.',
     'filter_all_statuses'  => 'Tutti gli stati',
     'filter_all_categories'=> 'Tutte le categorie',
     'search_placeholder'   => 'Cerca per nome, cognome, email o numero...',

@@ -205,10 +205,17 @@ $content = (function () use (
                             <?php foreach ($categories as $cat): ?>
                                 <option value="<?= (int) $cat['id'] ?>"
                                     <?= (int) ($member['category_id'] ?? 0) === (int) $cat['id'] ? 'selected' : '' ?>>
-                                    <?= $e($cat['nome']) ?><?= (!(bool) $cat['is_free']) ? ' (€ ' . number_format((float) $cat['quota_annuale'], 2, ',', '.') . ')' : '' ?>
+                                    <?= $e($cat['label']) ?><?= ((float) ($cat['annual_fee'] ?? 0) > 0) ? ' (€ ' . number_format((float) $cat['annual_fee'], 2, ',', '.') . ')' : '' ?>
                                 </option>
                             <?php endforeach; ?>
                         </select>
+                    </div>
+                    <?php else: ?>
+                    <div class="uk-margin">
+                        <label class="uk-form-label"><?= $e(__('members.category')) ?></label>
+                        <p class="uk-text-muted uk-text-small">
+                            <?= $e(__('members.no_categories_available')) ?>
+                        </p>
                     </div>
                     <?php endif; ?>
 

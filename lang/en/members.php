@@ -99,7 +99,8 @@ return [
     // -------------------------------------------------------------------------
     // Filters and search
     // -------------------------------------------------------------------------
-    'select_category'      => '— Select category —',
+    'select_category'         => '— Select category —',
+    'no_categories_available' => 'No categories available — create one in settings.',
     'filter_all_statuses'  => 'All statuses',
     'filter_all_categories'=> 'All categories',
     'search_placeholder'   => 'Search by name, surname, email or number...',
