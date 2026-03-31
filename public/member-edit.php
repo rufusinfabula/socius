@@ -12,6 +12,8 @@ requireStaff();
 
 use Socius\Models\Member;
 use Socius\Models\MembershipCategory;
+use Socius\Models\BoardRole;
+use Socius\Models\BoardMembership;
 
 $currentUser = current_user();
 $id          = (int) ($_GET['id'] ?? 0);
@@ -30,11 +32,31 @@ if ($member === null) {
     redirect('members.php');
 }
 
-$categories = [];
-$error      = null;
+$categories       = [];
+$boardRoles       = [];
+$currentBoardRole = null;
+$error            = null;
 
 try {
     $categories = MembershipCategory::findAll(true);
+} catch (\Throwable) {}
+
+try {
+    $boardRoles = BoardRole::findAll(true);
+} catch (\Throwable) {}
+
+// Load the member's currently active board role (if any)
+try {
+    $today = date('Y-m-d');
+    $allMemberships = BoardMembership::findByMember($id);
+    foreach ($allMemberships as $bm) {
+        if ($bm['resigned_on'] === null &&
+            ($bm['expires_on'] === null || $bm['expires_on'] >= $today)
+        ) {
+            $currentBoardRole = $bm;
+            break;
+        }
+    }
 } catch (\Throwable) {}
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -73,6 +95,51 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } else {
             try {
                 Member::update($id, $data);
+
+                // Board membership
+                $boardRoleId  = (int) ($_POST['board_role_id'] ?? 0);
+                $electedOn    = ($_POST['board_elected_on'] ?? '') ?: date('Y-m-d');
+                $boardNotes   = trim((string) ($_POST['board_notes'] ?? '')) ?: null;
+
+                try {
+                    if ($boardRoleId > 0) {
+                        if ($currentBoardRole) {
+                            if ((int) $currentBoardRole['role_id'] !== $boardRoleId) {
+                                // Role changed: end old, open new
+                                BoardMembership::update($currentBoardRole['id'], [
+                                    'resigned_on' => date('Y-m-d'),
+                                ]);
+                                BoardMembership::create([
+                                    'member_id'  => $id,
+                                    'role_id'    => $boardRoleId,
+                                    'elected_on' => $electedOn,
+                                    'notes'      => $boardNotes,
+                                    'created_by' => current_user_id(),
+                                ]);
+                            } else {
+                                // Same role: update notes only
+                                BoardMembership::update($currentBoardRole['id'], [
+                                    'notes' => $boardNotes,
+                                ]);
+                            }
+                        } else {
+                            // No existing role: create
+                            BoardMembership::create([
+                                'member_id'  => $id,
+                                'role_id'    => $boardRoleId,
+                                'elected_on' => $electedOn,
+                                'notes'      => $boardNotes,
+                                'created_by' => current_user_id(),
+                            ]);
+                        }
+                    } elseif ($currentBoardRole) {
+                        // Role cleared: set resigned_on today
+                        BoardMembership::update($currentBoardRole['id'], [
+                            'resigned_on' => date('Y-m-d'),
+                        ]);
+                    }
+                } catch (\Throwable) {}
+
                 Member::audit(current_user_id(), 'update', $id, $oldData, $data, client_ip());
                 csrf_regenerate();
                 flash_set('success', 'Socio aggiornato con successo.');
@@ -100,11 +167,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 csrf_token();
 
 theme('member-form', [
-    'activeNav'   => 'members',
-    'currentUser' => $currentUser,
-    'member'      => $member,
-    'categories'  => $categories,
-    'isEdit'      => true,
-    'error'       => $error,
-    'errorDebug'  => $errorDebug ?? null,
+    'activeNav'        => 'members',
+    'currentUser'      => $currentUser,
+    'member'           => $member,
+    'categories'       => $categories,
+    'boardRoles'       => $boardRoles,
+    'currentBoardRole' => $currentBoardRole,
+    'isEdit'           => true,
+    'error'            => $error,
+    'errorDebug'       => $errorDebug ?? null,
 ]);

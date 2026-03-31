@@ -18,8 +18,8 @@ $statusOptions = [
 ];
 
 $content = (function () use (
-    $member, $categories, $currentUser, $isEdit, $heading, $action,
-    $error, $e, $v, $statusOptions
+    $member, $categories, $boardRoles, $currentBoardRole, $currentUser,
+    $isEdit, $heading, $action, $error, $errorDebug, $e, $v, $statusOptions
 ): string {
     ob_start();
     $isStaff = (int) ($currentUser['role_id'] ?? 4) <= 3;
@@ -196,6 +196,22 @@ $content = (function () use (
                     </div>
                     <?php endif; ?>
 
+                    <!-- Categoria (required) -->
+                    <?php if (!empty($categories)): ?>
+                    <div class="uk-margin">
+                        <label class="uk-form-label" for="category_id"><?= $e(__('members.category')) ?> *</label>
+                        <select class="uk-select" id="category_id" name="category_id" required>
+                            <option value=""><?= $e(__('members.select_category')) ?></option>
+                            <?php foreach ($categories as $cat): ?>
+                                <option value="<?= (int) $cat['id'] ?>"
+                                    <?= (int) ($member['category_id'] ?? 0) === (int) $cat['id'] ? 'selected' : '' ?>>
+                                    <?= $e($cat['nome']) ?><?= (!(bool) $cat['is_free']) ? ' (€ ' . number_format((float) $cat['quota_annuale'], 2, ',', '.') . ')' : '' ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <?php endif; ?>
+
                     <!-- Status (staff only) -->
                     <?php if ($isStaff): ?>
                     <div class="uk-margin">
@@ -205,22 +221,6 @@ $content = (function () use (
                                 <option value="<?= $e($val) ?>"
                                     <?= ($member['status'] ?? 'active') === $val ? 'selected' : '' ?>>
                                     <?= $e($label) ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-                    <?php endif; ?>
-
-                    <!-- Categoria -->
-                    <?php if (!empty($categories)): ?>
-                    <div class="uk-margin">
-                        <label class="uk-form-label" for="category_id"><?= $e(__('members.category')) ?></label>
-                        <select class="uk-select" id="category_id" name="category_id">
-                            <option value="">— <?= $e(__('members.filter_all_categories')) ?> —</option>
-                            <?php foreach ($categories as $cat): ?>
-                                <option value="<?= (int) $cat['id'] ?>"
-                                    <?= (int) ($member['category_id'] ?? 0) === (int) $cat['id'] ? 'selected' : '' ?>>
-                                    <?= $e($cat['nome']) ?><?= (!(bool) $cat['is_free']) ? ' (€ ' . number_format((float) $cat['quota_annuale'], 2, ',', '.') . ')' : '' ?>
                                 </option>
                             <?php endforeach; ?>
                         </select>
@@ -319,6 +319,55 @@ $content = (function () use (
             </div><!-- /contacts grid -->
         </div><!-- /box contatti -->
 
+        <!-- =====================================================================
+             BOX RUOLO NEL DIRETTIVO
+        ====================================================================== -->
+        <?php if (!empty($boardRoles)): ?>
+        <div class="uk-card uk-card-default uk-card-body uk-border-rounded uk-margin-bottom">
+            <h3 class="uk-card-title">
+                <span uk-icon="icon: star; ratio: 1.1" class="uk-margin-small-right"></span>
+                <?= $e(__('members.board_role_box')) ?>
+            </h3>
+
+            <div class="uk-grid uk-grid-medium" uk-grid>
+
+                <div class="uk-width-1-3@m">
+                    <div class="uk-margin">
+                        <label class="uk-form-label" for="board_role_id"><?= $e(__('members.board_role')) ?></label>
+                        <select class="uk-select" id="board_role_id" name="board_role_id">
+                            <option value="0">— <?= $e(__('members.no_board_role')) ?> —</option>
+                            <?php foreach ($boardRoles as $br): ?>
+                                <option value="<?= (int) $br['id'] ?>"
+                                    <?= (int) ($currentBoardRole['role_id'] ?? 0) === (int) $br['id'] ? 'selected' : '' ?>>
+                                    <?= $e($br['label']) ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="uk-width-1-3@m" id="board-elected-field"
+                     style="<?= empty($currentBoardRole) ? 'display:none' : '' ?>">
+                    <div class="uk-margin">
+                        <label class="uk-form-label" for="board_elected_on"><?= $e(__('members.board_role_from')) ?></label>
+                        <input class="uk-input" type="date" id="board_elected_on" name="board_elected_on"
+                               value="<?= $e($currentBoardRole['elected_on'] ?? date('Y-m-d')) ?>">
+                    </div>
+                </div>
+
+                <div class="uk-width-1-3@m" id="board-notes-field"
+                     style="<?= empty($currentBoardRole) ? 'display:none' : '' ?>">
+                    <div class="uk-margin">
+                        <label class="uk-form-label" for="board_notes"><?= $e(__('members.board_role_notes')) ?></label>
+                        <input class="uk-input" type="text" id="board_notes" name="board_notes"
+                               value="<?= $e($currentBoardRole['notes'] ?? '') ?>">
+                    </div>
+                </div>
+
+            </div>
+        </div>
+        <?php endif; ?>
+
         <!-- Actions -->
         <div class="uk-flex uk-flex-between uk-margin-top">
             <a href="<?= $isEdit && !empty($member['id']) ? 'member.php?id=' . (int) $member['id'] : 'members.php' ?>"
@@ -373,6 +422,22 @@ $content = (function () use (
         if (btnCf) {
             btnCf.addEventListener('click', function () {
                 cfNote.hidden = false;
+            });
+        }
+
+        // --- Board role: show/hide extra fields ---
+        var selRole = document.getElementById('board_role_id');
+        var electedField = document.getElementById('board-elected-field');
+        var notesField   = document.getElementById('board-notes-field');
+        if (selRole && electedField && notesField) {
+            selRole.addEventListener('change', function () {
+                var show = this.value !== '0' && this.value !== '';
+                electedField.style.display = show ? '' : 'none';
+                notesField.style.display   = show ? '' : 'none';
+                if (show && !document.getElementById('board_elected_on').value) {
+                    var today = new Date().toISOString().slice(0, 10);
+                    document.getElementById('board_elected_on').value = today;
+                }
             });
         }
     })();

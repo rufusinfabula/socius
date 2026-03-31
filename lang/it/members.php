@@ -94,10 +94,12 @@ return [
     'box_registry'         => 'Anagrafica',
     'box_member'           => 'Socio',
     'box_contacts'         => 'Contatti',
+    'board_role_box'       => 'Ruolo nel direttivo',
 
     // -------------------------------------------------------------------------
     // Filtri e ricerca
     // -------------------------------------------------------------------------
+    'select_category'      => '— Seleziona categoria —',
     'filter_all_statuses'  => 'Tutti gli stati',
     'filter_all_categories'=> 'Tutte le categorie',
     'search_placeholder'   => 'Cerca per nome, cognome, email o numero...',
@@ -189,6 +191,9 @@ return [
     'board_past'           => 'Ex',
     'board_member_yes'     => 'Membro del direttivo',
     'board_member_no'      => 'Ruolo tecnico',
+    'no_board_role'        => 'Nessun ruolo',
+    'board_role_from'      => 'In carica dal',
+    'board_role_notes'     => 'Note',
 
     // -------------------------------------------------------------------------
     // Categorie soci
@@ -214,6 +219,8 @@ return [
     // -------------------------------------------------------------------------
     // Cancellazione emergenza
     // -------------------------------------------------------------------------
+    'emergency_box_title'        => 'Zona pericolosa',
+    'emergency_box_desc'         => 'Le operazioni in questa sezione sono irreversibili. Procedere con cautela.',
     'emergency_delete'           => 'Cancellazione di emergenza',
     'emergency_delete_warning'   => 'Operazione irreversibile',
     'emergency_delete_desc'      => 'Questa operazione cancella permanentemente il socio e tutte le sue tessere. I pagamenti collegati vengono mantenuti. Questa azione non può essere annullata.',

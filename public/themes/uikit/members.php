@@ -115,7 +115,6 @@ $content = (function () use (
                     <th><?= $e(__('members.name')) ?></th>
                     <th><?= $e(__('members.email')) ?></th>
                     <th><?= $e(__('members.status')) ?></th>
-                    <th><?= $e(__('members.category')) ?></th>
                     <th><?= $e(__('members.actions')) ?></th>
                 </tr>
             </thead>
@@ -138,7 +137,6 @@ $content = (function () use (
                             <?= $e($statusLabel[$s] ?? $s) ?>
                         </span>
                     </td>
-                    <td><?= $e($m['category_name'] ?? '—') ?></td>
                     <td>
                         <a href="member.php?id=<?= (int) $m['id'] ?>"
                            class="uk-icon-button" uk-icon="eye" title="Visualizza"></a>

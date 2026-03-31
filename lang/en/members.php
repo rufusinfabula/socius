@@ -94,10 +94,12 @@ return [
     'box_registry'         => 'Registry',
     'box_member'           => 'Member',
     'box_contacts'         => 'Contacts',
+    'board_role_box'       => 'Board role',
 
     // -------------------------------------------------------------------------
     // Filters and search
     // -------------------------------------------------------------------------
+    'select_category'      => '— Select category —',
     'filter_all_statuses'  => 'All statuses',
     'filter_all_categories'=> 'All categories',
     'search_placeholder'   => 'Search by name, surname, email or number...',
@@ -189,6 +191,9 @@ return [
     'board_past'           => 'Former',
     'board_member_yes'     => 'Board member',
     'board_member_no'      => 'Technical role',
+    'no_board_role'        => 'No role',
+    'board_role_from'      => 'In office from',
+    'board_role_notes'     => 'Notes',
 
     // -------------------------------------------------------------------------
     // Membership categories
@@ -214,6 +219,8 @@ return [
     // -------------------------------------------------------------------------
     // Emergency delete
     // -------------------------------------------------------------------------
+    'emergency_box_title'        => 'Danger zone',
+    'emergency_box_desc'         => 'Operations in this section are irreversible. Proceed with caution.',
     'emergency_delete'           => 'Emergency deletion',
     'emergency_delete_warning'   => 'Irreversible operation',
     'emergency_delete_desc'      => 'This operation permanently deletes the member and all their memberships. Linked payments are kept. This action cannot be undone.',

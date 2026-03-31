@@ -68,12 +68,6 @@ $content = (function () use (
                         <span uk-icon="pencil"></span> <?= $e(__('members.edit')) ?>
                     </a>
                 <?php endif; ?>
-                <?php if ($isSuperAdmin): ?>
-                    <a href="member-delete.php?id=<?= (int) $member['id'] ?>"
-                       class="uk-button uk-button-danger uk-button-small uk-margin-small-left">
-                        <span uk-icon="warning"></span> <?= $e(__('members.emergency_delete')) ?>
-                    </a>
-                <?php endif; ?>
             </div>
         </div>
     </div>
@@ -155,6 +149,25 @@ $content = (function () use (
                     <span uk-icon="icon: tag; ratio: 1.1" class="uk-margin-small-right"></span>
                     <?= $e(__('members.box_member')) ?>
                 </h3>
+
+                <!-- Ruolo direttivo attivo (badge in cima) -->
+                <?php
+                $today = date('Y-m-d');
+                $activeRoles = array_filter($boardRoles ?? [], fn($r) =>
+                    $r['resigned_on'] === null &&
+                    ($r['expires_on'] === null || $r['expires_on'] >= $today)
+                );
+                ?>
+                <?php if (!empty($activeRoles)): ?>
+                <div class="uk-margin-small-bottom">
+                    <?php foreach ($activeRoles as $ar): ?>
+                        <span class="uk-label <?= (bool) $ar['is_board_member'] ? 'uk-label-primary' : '' ?>"
+                              style="<?= (bool) $ar['is_board_member'] ? '' : 'background:#999; color:#fff' ?>">
+                            <?= $e($ar['role_label']) ?>
+                        </span>
+                    <?php endforeach; ?>
+                </div>
+                <?php endif; ?>
 
                 <!-- N. Tessera + N. Socio (stesso peso visivo, due colonne) -->
                 <?php $isActive = in_array($s, ['active', 'in_renewal'], true); ?>
@@ -446,6 +459,24 @@ $content = (function () use (
             ← <?= $e(__('members.back_to_list')) ?>
         </a>
     </div>
+
+    <!-- =====================================================================
+         Cancellazione emergenza (solo super_admin)
+    ====================================================================== -->
+    <?php if ($isSuperAdmin): ?>
+    <div class="uk-card uk-card-body uk-border-rounded uk-margin-top"
+         style="border: 2px solid #f0506e; background: #fff8f8">
+        <h3 class="uk-card-title" style="color:#bf2222">
+            <span uk-icon="icon: warning; ratio: 1.1" class="uk-margin-small-right"></span>
+            <?= $e(__('members.emergency_box_title')) ?>
+        </h3>
+        <p class="uk-text-small uk-text-muted"><?= $e(__('members.emergency_box_desc')) ?></p>
+        <a href="member-delete.php?id=<?= (int) $member['id'] ?>"
+           class="uk-button uk-button-danger uk-button-small">
+            <span uk-icon="trash"></span> <?= $e(__('members.emergency_delete')) ?>
+        </a>
+    </div>
+    <?php endif; ?>
 
     <?php
     return (string) ob_get_clean();

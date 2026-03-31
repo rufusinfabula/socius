@@ -12,14 +12,21 @@ requireStaff();
 
 use Socius\Models\Member;
 use Socius\Models\MembershipCategory;
+use Socius\Models\BoardRole;
+use Socius\Models\BoardMembership;
 
 $currentUser = current_user();
 $categories  = [];
+$boardRoles  = [];
 $error       = null;
 $formData    = null;
 
 try {
     $categories = MembershipCategory::findAll(true);
+} catch (\Throwable) {}
+
+try {
+    $boardRoles = BoardRole::findAll(true);
 } catch (\Throwable) {}
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -59,6 +66,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $newId     = Member::create($data);
                 $created   = Member::findById($newId);
                 $memberNum = $created['member_number'] ?? '';
+
+                // Board membership
+                $boardRoleId = (int) ($_POST['board_role_id'] ?? 0);
+                if ($boardRoleId > 0) {
+                    try {
+                        BoardMembership::create([
+                            'member_id'  => $newId,
+                            'role_id'    => $boardRoleId,
+                            'elected_on' => ($_POST['board_elected_on'] ?? '') ?: date('Y-m-d'),
+                            'notes'      => trim((string) ($_POST['board_notes'] ?? '')) ?: null,
+                            'created_by' => current_user_id(),
+                        ]);
+                    } catch (\Throwable) {}
+                }
+
                 Member::audit(current_user_id(), 'create', $newId, null, $data, client_ip());
                 csrf_regenerate();
                 flash_set('success', 'Socio creato con successo — N. socio: ' . $memberNum);
@@ -86,11 +108,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 csrf_token();
 
 theme('member-form', [
-    'activeNav'   => 'members',
-    'currentUser' => $currentUser,
-    'member'      => $formData,
-    'categories'  => $categories,
-    'isEdit'      => false,
-    'error'       => $error,
-    'errorDebug'  => $errorDebug ?? null,
+    'activeNav'        => 'members',
+    'currentUser'      => $currentUser,
+    'member'           => $formData,
+    'categories'       => $categories,
+    'boardRoles'       => $boardRoles,
+    'currentBoardRole' => null,
+    'isEdit'           => false,
+    'error'            => $error,
+    'errorDebug'       => $errorDebug ?? null,
 ]);
