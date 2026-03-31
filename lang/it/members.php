@@ -177,6 +177,20 @@ return [
     'payment_status'       => 'Stato',
 
     // -------------------------------------------------------------------------
+    // Direttivo — sezione nel profilo socio
+    // -------------------------------------------------------------------------
+    'board_roles'          => 'Ruoli nel direttivo',
+    'board_role'           => 'Ruolo',
+    'board_elected_on'     => 'Dal',
+    'board_expires_on'     => 'Al',
+    'board_resigned_on'    => 'Dimissioni',
+    'board_no_roles'       => 'Nessun ruolo nel direttivo',
+    'board_current'        => 'In carica',
+    'board_past'           => 'Ex',
+    'board_member_yes'     => 'Membro del direttivo',
+    'board_member_no'      => 'Ruolo tecnico',
+
+    // -------------------------------------------------------------------------
     // Categorie soci
     // -------------------------------------------------------------------------
     'categories'                 => 'Categorie soci',

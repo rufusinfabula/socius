@@ -177,6 +177,20 @@ return [
     'payment_status'       => 'Status',
 
     // -------------------------------------------------------------------------
+    // Board — section in member profile
+    // -------------------------------------------------------------------------
+    'board_roles'          => 'Board roles',
+    'board_role'           => 'Role',
+    'board_elected_on'     => 'From',
+    'board_expires_on'     => 'Until',
+    'board_resigned_on'    => 'Resigned',
+    'board_no_roles'       => 'No board roles',
+    'board_current'        => 'Current',
+    'board_past'           => 'Former',
+    'board_member_yes'     => 'Board member',
+    'board_member_no'      => 'Technical role',
+
+    // -------------------------------------------------------------------------
     // Membership categories
     // -------------------------------------------------------------------------
     'categories'                 => 'Membership categories',

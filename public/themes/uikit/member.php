@@ -25,7 +25,7 @@ $membershipStatusUkLabel = [
 ];
 
 $content = (function () use (
-    $member, $memberships, $payments, $currentUser,
+    $member, $memberships, $payments, $boardRoles, $currentUser,
     $e, $statusUkLabel, $statusStyle, $membershipStatusUkLabel
 ): string {
     ob_start();
@@ -330,6 +330,80 @@ $content = (function () use (
         </table>
         <?php endif; ?>
     </div>
+
+    <!-- =====================================================================
+         Ruoli nel direttivo (se presenti)
+    ====================================================================== -->
+    <?php if (!empty($boardRoles)): ?>
+    <div class="uk-card uk-card-default uk-card-body uk-border-rounded uk-margin-bottom">
+        <h3 class="uk-card-title">
+            <span uk-icon="icon: star; ratio: 1.1" class="uk-margin-small-right"></span>
+            <?= $e(__('members.board_roles')) ?>
+        </h3>
+
+        <?php
+        $today = date('Y-m-d');
+        $currentRoles = array_filter($boardRoles, fn($r) =>
+            $r['resigned_on'] === null &&
+            ($r['expires_on'] === null || $r['expires_on'] >= $today)
+        );
+        $pastRoles = array_filter($boardRoles, fn($r) =>
+            $r['resigned_on'] !== null ||
+            ($r['expires_on'] !== null && $r['expires_on'] < $today)
+        );
+        ?>
+
+        <?php if (!empty($currentRoles)): ?>
+        <ul class="uk-list uk-list-divider uk-margin-small-bottom">
+            <?php foreach ($currentRoles as $br): ?>
+            <li class="uk-flex uk-flex-between uk-flex-middle">
+                <div>
+                    <span class="uk-label <?= (bool) $br['is_board_member'] ? 'uk-label-primary' : '' ?>"
+                          style="<?= (bool) $br['is_board_member'] ? '' : 'background:#999; color:#fff' ?>">
+                        <?= $e(__('members.board_current')) ?>
+                    </span>
+                    <strong class="uk-margin-small-left"><?= $e($br['role_label']) ?></strong>
+                    <?php if ((bool) $br['can_sign']): ?>
+                        <span uk-icon="icon: pencil" class="uk-margin-small-left uk-text-muted" title="Firma atti"></span>
+                    <?php endif; ?>
+                </div>
+                <div class="uk-text-small uk-text-muted">
+                    <?= $e(__('members.board_elected_on')) ?> <?= $e($br['elected_on']) ?>
+                    <?php if (!empty($br['expires_on'])): ?>
+                        &nbsp;–&nbsp; <?= $e(__('members.board_expires_on')) ?> <?= $e($br['expires_on']) ?>
+                    <?php endif; ?>
+                </div>
+            </li>
+            <?php endforeach; ?>
+        </ul>
+        <?php endif; ?>
+
+        <?php if (!empty($pastRoles)): ?>
+        <details <?= empty($currentRoles) ? 'open' : '' ?>>
+            <summary class="uk-text-small uk-text-muted" style="cursor:pointer">
+                <?= $e(__('members.board_past')) ?> (<?= count($pastRoles) ?>)
+            </summary>
+            <ul class="uk-list uk-list-divider uk-margin-small-top">
+                <?php foreach ($pastRoles as $br): ?>
+                <li class="uk-text-small">
+                    <span class="uk-text-muted"><?= $e(__('members.board_past')) ?></span>
+                    <strong class="uk-margin-small-left"><?= $e($br['role_label']) ?></strong>
+                    <span class="uk-text-muted uk-margin-small-left">
+                        <?= $e($br['elected_on']) ?>
+                        <?php if (!empty($br['resigned_on'])): ?>
+                            &nbsp;–&nbsp; <?= $e(__('members.board_resigned_on')) ?> <?= $e($br['resigned_on']) ?>
+                        <?php elseif (!empty($br['expires_on'])): ?>
+                            &nbsp;–&nbsp; <?= $e($br['expires_on']) ?>
+                        <?php endif; ?>
+                    </span>
+                </li>
+                <?php endforeach; ?>
+            </ul>
+        </details>
+        <?php endif; ?>
+
+    </div>
+    <?php endif; ?>
 
     <!-- =====================================================================
          Pagamenti (solo staff)

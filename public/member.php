@@ -11,6 +11,7 @@ require_once __DIR__ . '/_init.php';
 requireAuth();
 
 use Socius\Models\Member;
+use Socius\Models\BoardRole;
 
 $currentUser = current_user();
 $id          = (int) ($_GET['id'] ?? 0);
@@ -31,6 +32,7 @@ if ($member === null) {
 
 $memberships = [];
 $payments    = [];
+$boardRoles  = [];
 
 try {
     $memberships = Member::getMemberships($id);
@@ -40,12 +42,17 @@ try {
     $payments = Member::getPayments($id);
 } catch (\Throwable) {}
 
+try {
+    $boardRoles = BoardRole::getMemberRoles($id);
+} catch (\Throwable) {}
+
 theme('member', [
     'activeNav'    => 'members',
     'currentUser'  => $currentUser,
     'member'       => $member,
     'memberships'  => $memberships,
     'payments'     => $payments,
+    'boardRoles'   => $boardRoles,
     'flashSuccess' => flash_get('success'),
     'flashError'   => flash_get('error'),
 ]);
