@@ -1,0 +1,34 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(rm -f /home/socius/web/socius.spazioumano.org/public_html/.git/index.lock)",
+      "Bash(git -C /home/socius/web/socius.spazioumano.org/public_html add app/Models/Setting.php lang/it/settings.php lang/en/settings.php public/settings.php public/themes/uikit/settings.php public/themes/uikit/layout.php composer.json)",
+      "Bash(sudo -u socius git -C /home/socius/web/socius.spazioumano.org/public_html add app/Models/Setting.php lang/it/settings.php lang/en/settings.php public/settings.php public/themes/uikit/settings.php public/themes/uikit/layout.php composer.json)",
+      "Bash(sudo -u socius git -C /home/socius/web/socius.spazioumano.org/public_html status)",
+      "Bash(getfacl /home/socius/web/socius.spazioumano.org/public_html/.git/index)",
+      "Bash(touch /home/socius/web/socius.spazioumano.org/public_html/.git/testwrite)",
+      "Bash(rm /home/socius/web/socius.spazioumano.org/public_html/.git/testwrite)",
+      "Bash(su -s /bin/bash socius -c 'git -C /home/socius/web/socius.spazioumano.org/public_html status')",
+      "Bash(getfacl /home/socius/web/socius.spazioumano.org/public_html/.git)",
+      "Bash(setfacl -m mask::rwx /home/socius/web/socius.spazioumano.org/public_html/.git)",
+      "Bash(for d:*)",
+      "Bash(do echo:*)",
+      "Bash(getfacl /home/socius/web/socius.spazioumano.org/public_html/$d)",
+      "Bash(done)",
+      "Bash(sudo -l)",
+      "Bash(git --no-optional-locks -C /home/socius/web/socius.spazioumano.org/public_html add app/Models/Setting.php)",
+      "Bash(ssh -o BatchMode=yes socius@localhost \"git -C /home/socius/web/socius.spazioumano.org/public_html status\")",
+      "Bash(git config:*)",
+      "Bash(chmod u+w /home/socius/web/socius.spazioumano.org/public_html/.git)",
+      "Bash(chmod u+w /home/socius/web/socius.spazioumano.org/public_html/.git/objects)",
+      "Bash(chmod u+w /home/socius/web/socius.spazioumano.org/public_html/.git/refs)",
+      "Bash(chmod u+w /home/socius/web/socius.spazioumano.org/public_html/.git/refs/heads)",
+      "Bash(chmod u+w /home/socius/web/socius.spazioumano.org/public_html/.git/logs)",
+      "Bash(gh auth:*)",
+      "Bash(sudo git:*)"
+    ]
+  }
+}

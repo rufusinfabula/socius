@@ -18,7 +18,27 @@
 <nav class="uk-navbar-container" uk-navbar>
     <div class="uk-navbar-left uk-margin-left">
         <a class="uk-navbar-item uk-logo" href="dashboard.php">
-            <?= htmlspecialchars((string) \Socius\Core\Config::get('app.name', 'Socius'), ENT_QUOTES, 'UTF-8') ?>
+            <?php
+            try {
+                $db = \Socius\Core\Database::getInstance();
+                $logoRow = $db->fetch("SELECT `value` FROM settings WHERE `key` = 'association.logo_path' LIMIT 1");
+                $nameRow = $db->fetch("SELECT `value` FROM settings WHERE `key` = 'association.name' LIMIT 1");
+                $logoPath = ($logoRow && !empty($logoRow['value'])) ? (string) $logoRow['value'] : '';
+                $assocName = ($nameRow && !empty($nameRow['value']))
+                    ? (string) $nameRow['value']
+                    : (string) \Socius\Core\Config::get('app.name', 'Socius');
+            } catch (\Throwable) {
+                $logoPath  = '';
+                $assocName = (string) \Socius\Core\Config::get('app.name', 'Socius');
+            }
+            if ($logoPath !== '') {
+                echo '<img src="' . htmlspecialchars('../' . $logoPath, ENT_QUOTES, 'UTF-8')
+                   . '" alt="' . htmlspecialchars($assocName, ENT_QUOTES, 'UTF-8')
+                   . '" style="max-height:36px; max-width:160px; vertical-align:middle">';
+            } else {
+                echo htmlspecialchars($assocName, ENT_QUOTES, 'UTF-8');
+            }
+            ?>
         </a>
     </div>
     <div class="uk-navbar-right uk-margin-right">
