@@ -32,7 +32,7 @@
                 $assocName = (string) \Socius\Core\Config::get('app.name', 'Socius');
             }
             if ($logoPath !== '') {
-                echo '<img src="' . htmlspecialchars('../' . $logoPath, ENT_QUOTES, 'UTF-8')
+                echo '<img src="' . htmlspecialchars($logoPath, ENT_QUOTES, 'UTF-8')
                    . '" alt="' . htmlspecialchars($assocName, ENT_QUOTES, 'UTF-8')
                    . '" style="max-height:36px; max-width:160px; vertical-align:middle">';
             } else {

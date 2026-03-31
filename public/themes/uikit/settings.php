@@ -70,8 +70,12 @@ $content = (function () use (
                         <?php if ($logoPath !== ''): ?>
                             <div class="uk-margin">
                                 <p class="uk-text-muted uk-text-small"><?= $e(__('settings.assoc_logo_current')) ?></p>
-                                <img src="<?= $e('../' . $logoPath) ?>"
-                                     alt="Logo" style="max-height:80px; max-width:200px">
+                                <img src="<?= $e($logoPath) ?>"
+                                     alt="Logo" style="max-height:80px; max-width:200px; display:block; margin-bottom:8px">
+                                <label class="uk-flex uk-flex-middle" style="gap:.4rem; cursor:pointer">
+                                    <input class="uk-checkbox" type="checkbox" name="remove_logo" value="1">
+                                    <span class="uk-text-small uk-text-danger">Rimuovi logo</span>
+                                </label>
                             </div>
                         <?php else: ?>
                             <p class="uk-text-muted uk-text-small"><?= $e(__('settings.assoc_logo_remove')) ?></p>
@@ -155,7 +159,9 @@ $content = (function () use (
                 <div class="uk-width-1-2@m">
                     <div class="uk-card uk-card-default uk-card-body uk-border-rounded uk-margin-bottom">
                         <h3 class="uk-card-title"><?= $e(__('settings.tab_social_year')) ?></h3>
-                        <p class="uk-text-small uk-text-muted"><?= $e(__('settings.renewal_date_hint')) ?></p>
+                        <p class="uk-text-small uk-text-muted">
+                            Seleziona mese e giorno per ogni scadenza. L'anno non è rilevante.
+                        </p>
 
                         <?php
                         $renewalFields = [
@@ -174,15 +180,37 @@ $content = (function () use (
                             'renewal.date_close'           => '04-15',
                             'renewal.date_lapse'           => '12-31',
                         ];
+                        // Convert stored MM-DD to a full date value for type="date" using year 2000
+                        $toDateValue = static function (string $mmdd): string {
+                            if (preg_match('/^(\d{2})-(\d{2})$/', $mmdd, $m)) {
+                                return '2000-' . $m[1] . '-' . $m[2];
+                            }
+                            return '';
+                        };
+                        $monthNames = [
+                            1=>'Gennaio',2=>'Febbraio',3=>'Marzo',4=>'Aprile',
+                            5=>'Maggio',6=>'Giugno',7=>'Luglio',8=>'Agosto',
+                            9=>'Settembre',10=>'Ottobre',11=>'Novembre',12=>'Dicembre',
+                        ];
                         foreach ($renewalFields as $key => $langKey):
-                            $fieldName = str_replace('renewal.date_', 'renewal_date_', $key);
+                            $fieldName  = str_replace('renewal.date_', 'renewal_date_', $key);
+                            $mmdd       = $sv($key, $renewalDefaults[$key]);
+                            $dateValue  = $toDateValue($mmdd);
+                            // Parse current value for display label
+                            $parts = explode('-', $mmdd);
+                            $displayLabel = (count($parts) === 2 && (int)$parts[0] >= 1 && (int)$parts[0] <= 12)
+                                ? (int)$parts[1] . ' ' . $monthNames[(int)$parts[0]]
+                                : $mmdd;
                         ?>
                         <div class="uk-margin">
-                            <label class="uk-form-label"><?= $e(__("settings.{$langKey}")) ?></label>
-                            <input class="uk-input" type="text" name="<?= $e($fieldName) ?>"
-                                   placeholder="MM-GG"
-                                   value="<?= $e($sv($key, $renewalDefaults[$key])) ?>"
-                                   pattern="^\d{2}-\d{2}$" maxlength="5">
+                            <label class="uk-form-label">
+                                <?= $e(__("settings.{$langKey}")) ?>
+                                <?php if ($mmdd !== ''): ?>
+                                    <span class="uk-text-muted uk-text-small uk-margin-small-left">(<?= $e($displayLabel) ?>)</span>
+                                <?php endif; ?>
+                            </label>
+                            <input class="uk-input" type="date" name="<?= $e($fieldName) ?>"
+                                   value="<?= $e($dateValue) ?>">
                         </div>
                         <?php endforeach; ?>
 

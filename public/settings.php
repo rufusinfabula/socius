@@ -45,7 +45,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // -----------------------------------------------------------------
         case 'association':
             $logoPath = Setting::get('association.logo_path', '');
-            if (!empty($_FILES['logo']['name'])) {
+            // Remove logo if requested
+            if (isset($_POST['remove_logo'])) {
+                if ($logoPath !== '') {
+                    $absPath = BASE_PATH . '/public/' . $logoPath;
+                    if (is_file($absPath)) {
+                        @unlink($absPath);
+                    }
+                }
+                $logoPath = '';
+            } elseif (!empty($_FILES['logo']['name'])) {
                 $uploadResult = _settings_upload_logo($_FILES['logo']);
                 if ($uploadResult['ok']) {
                     $logoPath = $uploadResult['path'];
@@ -79,13 +88,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // -----------------------------------------------------------------
         case 'social_year':
             try {
+                // Input type="date" sends YYYY-MM-DD; store only MM-DD
+                $toMMDD = static function (string $raw, string $default): string {
+                    $raw = trim($raw);
+                    if (preg_match('/^\d{4}-(\d{2}-\d{2})$/', $raw, $m)) {
+                        return $m[1];
+                    }
+                    if (preg_match('/^\d{2}-\d{2}$/', $raw)) {
+                        return $raw;
+                    }
+                    return $default;
+                };
                 Setting::setMultiple([
-                    'renewal.date_open'            => trim((string) ($_POST['renewal_date_open'] ?? '11-15')),
-                    'renewal.date_first_reminder'  => trim((string) ($_POST['renewal_date_first_reminder'] ?? '02-15')),
-                    'renewal.date_second_reminder' => trim((string) ($_POST['renewal_date_second_reminder'] ?? '03-15')),
-                    'renewal.date_third_reminder'  => trim((string) ($_POST['renewal_date_third_reminder'] ?? '04-15')),
-                    'renewal.date_close'           => trim((string) ($_POST['renewal_date_close'] ?? '04-15')),
-                    'renewal.date_lapse'           => trim((string) ($_POST['renewal_date_lapse'] ?? '12-31')),
+                    'renewal.date_open'            => $toMMDD((string) ($_POST['renewal_date_open'] ?? ''), '11-15'),
+                    'renewal.date_first_reminder'  => $toMMDD((string) ($_POST['renewal_date_first_reminder'] ?? ''), '02-15'),
+                    'renewal.date_second_reminder' => $toMMDD((string) ($_POST['renewal_date_second_reminder'] ?? ''), '03-15'),
+                    'renewal.date_third_reminder'  => $toMMDD((string) ($_POST['renewal_date_third_reminder'] ?? ''), '04-15'),
+                    'renewal.date_close'           => $toMMDD((string) ($_POST['renewal_date_close'] ?? ''), '04-15'),
+                    'renewal.date_lapse'           => $toMMDD((string) ($_POST['renewal_date_lapse'] ?? ''), '12-31'),
                     'renewal.reminder_approval'    => isset($_POST['renewal_reminder_approval']) ? 'true' : 'false',
                 ]);
                 csrf_regenerate();
@@ -362,7 +382,8 @@ function _settings_upload_logo(array $file): array
     }
 
     $ext = $allowed[$mime];
-    $dir = BASE_PATH . '/storage/uploads/logo';
+    // Must be inside public/ to be web-accessible
+    $dir = BASE_PATH . '/public/storage/uploads/logo';
     if (!is_dir($dir)) {
         mkdir($dir, 0755, true);
     }
