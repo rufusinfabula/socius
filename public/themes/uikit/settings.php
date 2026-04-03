@@ -180,41 +180,44 @@ $content = (function () use (
                             'renewal.date_close'           => '04-15',
                             'renewal.date_lapse'           => '12-31',
                         ];
-                        // Convert stored MM-DD to a full date value for type="date" using year 2000
-                        $toDateValue = static function (string $mmdd): string {
-                            if (preg_match('/^(\d{2})-(\d{2})$/', $mmdd, $m)) {
-                                return '2000-' . $m[1] . '-' . $m[2];
-                            }
-                            return '';
-                        };
-                        $monthNames = [
-                            1=>'Gennaio',2=>'Febbraio',3=>'Marzo',4=>'Aprile',
-                            5=>'Maggio',6=>'Giugno',7=>'Luglio',8=>'Agosto',
-                            9=>'Settembre',10=>'Ottobre',11=>'Novembre',12=>'Dicembre',
+                        $monthOptions = [
+                            1  => 'Gennaio / January',
+                            2  => 'Febbraio / February',
+                            3  => 'Marzo / March',
+                            4  => 'Aprile / April',
+                            5  => 'Maggio / May',
+                            6  => 'Giugno / June',
+                            7  => 'Luglio / July',
+                            8  => 'Agosto / August',
+                            9  => 'Settembre / September',
+                            10 => 'Ottobre / October',
+                            11 => 'Novembre / November',
+                            12 => 'Dicembre / December',
                         ];
                         foreach ($renewalFields as $key => $langKey):
-                            $fieldName  = str_replace('renewal.date_', 'renewal_date_', $key);
-                            $mmdd       = $sv($key, $renewalDefaults[$key]);
-                            $dateValue  = $toDateValue($mmdd);
-                            // Parse current value for display label
+                            $mmdd  = $sv($key, $renewalDefaults[$key]);
                             $parts = explode('-', $mmdd);
-                            $displayLabel = (count($parts) === 2 && (int)$parts[0] >= 1 && (int)$parts[0] <= 12)
-                                ? (int)$parts[1] . ' ' . $monthNames[(int)$parts[0]]
-                                : $mmdd;
+                            $curM  = (count($parts) === 2) ? (int) $parts[0] : 0;
+                            $curD  = (count($parts) === 2) ? (int) $parts[1] : 0;
                         ?>
                         <div class="uk-margin">
-                            <label class="uk-form-label">
-                                <?= $e(__("settings.{$langKey}")) ?>
-                                <?php if ($mmdd !== ''): ?>
-                                    <span class="uk-text-muted uk-text-small uk-margin-small-left">(<?= $e($displayLabel) ?>)</span>
-                                <?php endif; ?>
-                            </label>
-                            <input class="uk-input" type="date" name="<?= $e($fieldName) ?>"
-                                   value="<?= $e($dateValue) ?>"
-                                   min="2000-01-01" max="2000-12-31">
-                            <p class="uk-text-small uk-text-muted uk-margin-remove-top" style="margin-top:2px">
-                                Seleziona giorno e mese — l'anno viene ignorato
-                            </p>
+                            <label class="uk-form-label"><?= $e(__("settings.{$langKey}")) ?></label>
+                            <div style="display:flex; gap:8px; align-items:center">
+                                <select class="uk-select" name="<?= $e($langKey) ?>_month" style="width:auto">
+                                    <?php foreach ($monthOptions as $num => $label): ?>
+                                    <option value="<?= $num ?>" <?= $curM === $num ? 'selected' : '' ?>>
+                                        <?= $e($label) ?>
+                                    </option>
+                                    <?php endforeach; ?>
+                                </select>
+                                <select class="uk-select" name="<?= $e($langKey) ?>_day" style="width:auto">
+                                    <?php for ($d = 1; $d <= 31; $d++): ?>
+                                    <option value="<?= $d ?>" <?= $curD === $d ? 'selected' : '' ?>>
+                                        <?= sprintf('%02d', $d) ?>
+                                    </option>
+                                    <?php endfor; ?>
+                                </select>
+                            </div>
                         </div>
                         <?php endforeach; ?>
 
@@ -636,15 +639,22 @@ $content = (function () use (
 
                 <div class="uk-margin">
                     <label class="uk-form-label"><?= $e(__('settings.theme')) ?></label>
-                    <select class="uk-select" name="ui_theme">
+                    <select class="uk-select" name="ui_theme" id="ui_theme_select">
                         <?php
                         $curTheme = $sv('ui.theme', 'uikit');
-                        foreach ($themes as $val => $lbl): ?>
-                        <option value="<?= $e($val) ?>" <?= $curTheme === $val ? 'selected' : '' ?>>
-                            <?= $e($lbl) ?>
+                        foreach ($themes as $slug => $meta): ?>
+                        <option value="<?= $e($slug) ?>" <?= $curTheme === $slug ? 'selected' : '' ?>
+                                data-status="<?= $e($meta['status']) ?>">
+                            <?= $e($meta['name']) ?><?= $meta['status'] === 'wip' ? ' (WIP)' : '' ?>
                         </option>
                         <?php endforeach; ?>
                     </select>
+                    <?php if (isset($themes[$curTheme]) && $themes[$curTheme]['status'] === 'wip'): ?>
+                    <div class="uk-alert-warning uk-margin-small-top" uk-alert style="padding:8px 12px">
+                        <span uk-icon="warning" class="uk-margin-small-right"></span>
+                        <?= $e(__('settings.theme_wip_warning')) ?>
+                    </div>
+                    <?php endif; ?>
                 </div>
 
                 <div class="uk-margin">

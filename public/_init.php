@@ -30,9 +30,6 @@ ini_set('display_errors', $_debug ? '1' : '0');
 ini_set('log_errors', '1');
 date_default_timezone_set((string) Config::get('app.timezone', 'Europe/Rome'));
 
-// Locale
-Lang::setLocale((string) Config::get('app.locale', 'it'));
-
 // Session
 session_set_cookie_params([
     'lifetime' => 0,
@@ -45,6 +42,22 @@ session_set_cookie_params([
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
+
+// Locale — priority: session → DB ui.locale → .env app.locale → 'it'
+(static function (): void {
+    if (!empty($_SESSION['locale'])) {
+        Lang::setLocale((string) $_SESSION['locale']);
+        return;
+    }
+    try {
+        $row = Database::getInstance()->fetch("SELECT `value` FROM settings WHERE `key` = 'ui.locale' LIMIT 1");
+        if ($row && !empty($row['value'])) {
+            Lang::setLocale((string) $row['value']);
+            return;
+        }
+    } catch (\Throwable) {}
+    Lang::setLocale((string) \Socius\Core\Config::get('app.locale', 'it'));
+})();
 
 // -------------------------------------------------------------------------
 // Helpers

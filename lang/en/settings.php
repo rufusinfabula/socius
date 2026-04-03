@@ -107,6 +107,7 @@ return [
     'theme_uikit'            => 'UIkit — default theme',
     'theme_bootstrap'        => 'Bootstrap',
     'theme_tailwind'         => 'Tailwind CSS',
+    'theme_wip_warning'      => 'Warning: the selected theme is still under development (WIP) and may not work correctly.',
     'language'               => 'Interface language',
     'date_format'            => 'Date format',
     'timezone'               => 'Timezone',

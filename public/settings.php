@@ -88,29 +88,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // -----------------------------------------------------------------
         case 'social_year':
             try {
-                // Input type="date" sends YYYY-MM-DD; store only MM-DD
-                $toMMDD = static function (string $raw, string $default): string {
-                    $raw = trim($raw);
-                    if ($raw === '') {
-                        return $default;
-                    }
-                    $ts = strtotime($raw);
-                    if ($ts !== false) {
-                        return date('m-d', $ts);
-                    }
-                    // Already MM-DD (legacy values)
-                    if (preg_match('/^\d{2}-\d{2}$/', $raw)) {
-                        return $raw;
+                // Selects send month and day separately; combine to MM-DD
+                $toMMDD = static function (string $month, string $day, string $default): string {
+                    $m = (int) $month;
+                    $d = (int) $day;
+                    if ($m >= 1 && $m <= 12 && $d >= 1 && $d <= 31) {
+                        return sprintf('%02d-%02d', $m, $d);
                     }
                     return $default;
                 };
                 Setting::setMultiple([
-                    'renewal.date_open'            => $toMMDD((string) ($_POST['renewal_date_open'] ?? ''), '11-15'),
-                    'renewal.date_first_reminder'  => $toMMDD((string) ($_POST['renewal_date_first_reminder'] ?? ''), '02-15'),
-                    'renewal.date_second_reminder' => $toMMDD((string) ($_POST['renewal_date_second_reminder'] ?? ''), '03-15'),
-                    'renewal.date_third_reminder'  => $toMMDD((string) ($_POST['renewal_date_third_reminder'] ?? ''), '04-15'),
-                    'renewal.date_close'           => $toMMDD((string) ($_POST['renewal_date_close'] ?? ''), '04-15'),
-                    'renewal.date_lapse'           => $toMMDD((string) ($_POST['renewal_date_lapse'] ?? ''), '12-31'),
+                    'renewal.date_open'            => $toMMDD((string) ($_POST['renewal_open_month'] ?? ''), (string) ($_POST['renewal_open_day'] ?? ''), '11-15'),
+                    'renewal.date_first_reminder'  => $toMMDD((string) ($_POST['renewal_first_reminder_month'] ?? ''), (string) ($_POST['renewal_first_reminder_day'] ?? ''), '02-15'),
+                    'renewal.date_second_reminder' => $toMMDD((string) ($_POST['renewal_second_reminder_month'] ?? ''), (string) ($_POST['renewal_second_reminder_day'] ?? ''), '03-15'),
+                    'renewal.date_third_reminder'  => $toMMDD((string) ($_POST['renewal_third_reminder_month'] ?? ''), (string) ($_POST['renewal_third_reminder_day'] ?? ''), '04-15'),
+                    'renewal.date_close'           => $toMMDD((string) ($_POST['renewal_close_month'] ?? ''), (string) ($_POST['renewal_close_day'] ?? ''), '04-15'),
+                    'renewal.date_lapse'           => $toMMDD((string) ($_POST['renewal_lapse_month'] ?? ''), (string) ($_POST['renewal_lapse_day'] ?? ''), '12-31'),
                     'renewal.reminder_approval'    => isset($_POST['renewal_reminder_approval']) ? 'true' : 'false',
                 ]);
                 csrf_regenerate();
@@ -230,7 +223,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 ]);
                 // Apply language to current request/session immediately
                 \Socius\Core\Lang::setLocale($newLocale);
-                $_SESSION['ui_locale'] = $newLocale;
+                $_SESSION['locale'] = $newLocale;
                 csrf_regenerate();
                 flash_set('success', __('settings.saved_ok'));
             } catch (\Throwable $ex) {
@@ -333,6 +326,7 @@ try {
 } catch (\Throwable) {}
 
 // Detect installed themes: any subdirectory of public/themes/ that has a layout.php
+// Reads optional theme.json for display name and status ('stable'|'wip')
 $themesDir = BASE_PATH . '/public/themes';
 if (is_dir($themesDir)) {
     foreach (scandir($themesDir) as $entry) {
@@ -340,12 +334,25 @@ if (is_dir($themesDir)) {
             && is_dir($themesDir . '/' . $entry)
             && is_file($themesDir . '/' . $entry . '/layout.php')
         ) {
-            $themes[$entry] = ucfirst($entry);
+            $meta = ['name' => ucfirst($entry), 'status' => 'stable'];
+            $jsonFile = $themesDir . '/' . $entry . '/theme.json';
+            if (is_file($jsonFile)) {
+                $decoded = json_decode((string) file_get_contents($jsonFile), true);
+                if (is_array($decoded)) {
+                    if (!empty($decoded['name'])) {
+                        $meta['name'] = (string) $decoded['name'];
+                    }
+                    if (!empty($decoded['status'])) {
+                        $meta['status'] = (string) $decoded['status'];
+                    }
+                }
+            }
+            $themes[$entry] = $meta;
         }
     }
 }
 if (empty($themes)) {
-    $themes = ['uikit' => 'UIkit'];
+    $themes = ['uikit' => ['name' => 'UIkit', 'status' => 'stable']];
 }
 
 // Detect available languages: subdirectories of lang/ that contain messages.php
