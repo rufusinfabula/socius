@@ -8,7 +8,7 @@ $se = fn(string $key, string $default = '') => $e($settings[explode('.', $key, 2
 $content = (function () use (
     $e, $sv, $se,
     $activeTab, $settings, $categories, $categoryFees, $boardRoles,
-    $languages, $memberCurrentMax, $currentUser, $isSuperAdmin
+    $languages, $themes, $memberCurrentMax, $currentUser, $isSuperAdmin
 ): string {
     ob_start();
     ?>
@@ -210,7 +210,11 @@ $content = (function () use (
                                 <?php endif; ?>
                             </label>
                             <input class="uk-input" type="date" name="<?= $e($fieldName) ?>"
-                                   value="<?= $e($dateValue) ?>">
+                                   value="<?= $e($dateValue) ?>"
+                                   min="2000-01-01" max="2000-12-31">
+                            <p class="uk-text-small uk-text-muted uk-margin-remove-top" style="margin-top:2px">
+                                Seleziona giorno e mese — l'anno viene ignorato
+                            </p>
                         </div>
                         <?php endforeach; ?>
 
@@ -634,11 +638,6 @@ $content = (function () use (
                     <label class="uk-form-label"><?= $e(__('settings.theme')) ?></label>
                     <select class="uk-select" name="ui_theme">
                         <?php
-                        $themes = [
-                            'uikit'     => __('settings.theme_uikit'),
-                            'bootstrap' => __('settings.theme_bootstrap'),
-                            'tailwind'  => __('settings.theme_tailwind'),
-                        ];
                         $curTheme = $sv('ui.theme', 'uikit');
                         foreach ($themes as $val => $lbl): ?>
                         <option value="<?= $e($val) ?>" <?= $curTheme === $val ? 'selected' : '' ?>>

@@ -91,9 +91,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 // Input type="date" sends YYYY-MM-DD; store only MM-DD
                 $toMMDD = static function (string $raw, string $default): string {
                     $raw = trim($raw);
-                    if (preg_match('/^\d{4}-(\d{2}-\d{2})$/', $raw, $m)) {
-                        return $m[1];
+                    if ($raw === '') {
+                        return $default;
                     }
+                    $ts = strtotime($raw);
+                    if ($ts !== false) {
+                        return date('m-d', $ts);
+                    }
+                    // Already MM-DD (legacy values)
                     if (preg_match('/^\d{2}-\d{2}$/', $raw)) {
                         return $raw;
                     }
@@ -216,12 +221,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // -----------------------------------------------------------------
         case 'interface':
             try {
+                $newLocale = trim((string) ($_POST['ui_language'] ?? 'it'));
                 Setting::setMultiple([
                     'ui.theme'       => trim((string) ($_POST['ui_theme'] ?? 'uikit')),
-                    'ui.locale'      => trim((string) ($_POST['ui_language'] ?? 'it')),
+                    'ui.locale'      => $newLocale,
                     'ui.date_format' => trim((string) ($_POST['ui_date_format'] ?? 'd/m/Y')),
                     'ui.timezone'    => trim((string) ($_POST['ui_timezone'] ?? 'Europe/Rome')),
                 ]);
+                // Apply language to current request/session immediately
+                \Socius\Core\Lang::setLocale($newLocale);
+                $_SESSION['ui_locale'] = $newLocale;
                 csrf_regenerate();
                 flash_set('success', __('settings.saved_ok'));
             } catch (\Throwable $ex) {
@@ -308,6 +317,7 @@ $categories       = [];
 $categoryFees     = [];
 $boardRoles       = [];
 $languages        = [];
+$themes           = [];
 $memberCurrentMax = 0;
 
 try { $settings = Setting::getAllGroups(); } catch (\Throwable) {}
@@ -318,17 +328,35 @@ try {
     foreach ($categories as $cat) {
         $catId = (int) $cat['id'];
         $fees  = MembershipCategory::getFeesHistory($catId);
-        // Limit to last 3 years
         $categoryFees[$catId] = array_slice($fees, 0, 3);
     }
 } catch (\Throwable) {}
 
-// Detect available languages from /lang/ directory
+// Detect installed themes: any subdirectory of public/themes/ that has a layout.php
+$themesDir = BASE_PATH . '/public/themes';
+if (is_dir($themesDir)) {
+    foreach (scandir($themesDir) as $entry) {
+        if ($entry !== '.' && $entry !== '..'
+            && is_dir($themesDir . '/' . $entry)
+            && is_file($themesDir . '/' . $entry . '/layout.php')
+        ) {
+            $themes[$entry] = ucfirst($entry);
+        }
+    }
+}
+if (empty($themes)) {
+    $themes = ['uikit' => 'UIkit'];
+}
+
+// Detect available languages: subdirectories of lang/ that contain messages.php
 $langBaseDir = BASE_PATH . '/lang';
 $langNames   = ['it' => 'Italiano', 'en' => 'English', 'de' => 'Deutsch', 'fr' => 'Français', 'es' => 'Español', 'pt' => 'Português'];
 if (is_dir($langBaseDir)) {
     foreach (scandir($langBaseDir) as $entry) {
-        if ($entry !== '.' && $entry !== '..' && is_dir($langBaseDir . '/' . $entry)) {
+        if ($entry !== '.' && $entry !== '..'
+            && is_dir($langBaseDir . '/' . $entry)
+            && is_file($langBaseDir . '/' . $entry . '/messages.php')
+        ) {
             $languages[$entry] = $langNames[$entry] ?? strtoupper($entry);
         }
     }
@@ -351,6 +379,7 @@ theme('settings', [
     'categoryFees'    => $categoryFees,
     'boardRoles'      => $boardRoles,
     'languages'       => $languages,
+    'themes'          => $themes,
     'memberCurrentMax'=> $memberCurrentMax,
     'flashSuccess'    => flash_get('success'),
     'flashError'      => flash_get('error'),

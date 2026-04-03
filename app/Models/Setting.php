@@ -82,12 +82,13 @@ class Setting extends BaseModel
      */
     public static function set(string $key, mixed $value): bool
     {
-        $val = is_bool($value) ? ($value ? 'true' : 'false') : (string) $value;
+        $val   = is_bool($value) ? ($value ? 'true' : 'false') : (string) $value;
+        $group = explode('.', $key, 2)[0]; // infer group from key prefix (e.g. "renewal.date_open" → "renewal")
 
         self::db()->query(
-            'INSERT INTO `settings` (`key`, `value`) VALUES (?, ?)
+            'INSERT INTO `settings` (`key`, `value`, `group`) VALUES (?, ?, ?)
              ON DUPLICATE KEY UPDATE `value` = VALUES(`value`)',
-            [$key, $val]
+            [$key, $val, $group]
         );
 
         self::$cache[$key] = $val;
