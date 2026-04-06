@@ -180,22 +180,45 @@ $content = (function () use (
                             'renewal.date_close'           => '04-15',
                             'renewal.date_lapse'           => '12-31',
                         ];
+                        <?php
+                        $locale = $_SESSION['locale'] ?? 'it';
+                        $monthNames = ($locale === 'en')
+                            ? ['', 'January', 'February', 'March', 'April', 'May', 'June',
+                               'July', 'August', 'September', 'October', 'November', 'December']
+                            : ['', 'Gennaio', 'Febbraio', 'Marzo', 'Aprile', 'Maggio', 'Giugno',
+                               'Luglio', 'Agosto', 'Settembre', 'Ottobre', 'Novembre', 'Dicembre'];
                         foreach ($renewalFields as $key => $langKey):
-                            $mmdd = $sv($key, $renewalDefaults[$key]);
+                            $mmdd   = $sv($key, $renewalDefaults[$key]);
+                            $parts  = explode('-', $mmdd);
+                            $curM   = (count($parts) === 2) ? (int) $parts[0] : 11;
+                            $curD   = (count($parts) === 2) ? (int) $parts[1] : 15;
                         ?>
                         <div class="uk-margin">
                             <label class="uk-form-label"><?= $e(__("settings.{$langKey}")) ?></label>
-                            <input type="text"
-                                   name="<?= $e($langKey) ?>_flatpickr"
-                                   class="uk-input"
-                                   placeholder="GG/MM"
-                                   style="max-width:130px"
-                                   data-flatpickr-monthday
-                                   autocomplete="off">
-                            <input type="hidden"
-                                   name="<?= $e($langKey) ?>"
-                                   id="<?= $e($langKey) ?>_hidden"
-                                   value="<?= $e($mmdd) ?>">
+                            <div style="display:flex; align-items:center; gap:8px">
+                                <select name="<?= $e($langKey) ?>_month" class="uk-select" style="width:auto">
+                                    <?php for ($i = 1; $i <= 12; $i++): ?>
+                                    <option value="<?= sprintf('%02d', $i) ?>" <?= $curM === $i ? 'selected' : '' ?>>
+                                        <?= $e($monthNames[$i]) ?>
+                                    </option>
+                                    <?php endfor; ?>
+                                </select>
+                                <div style="display:flex; align-items:center; gap:4px">
+                                    <button type="button" class="uk-button uk-button-default"
+                                            style="padding:0 10px; line-height:38px"
+                                            onclick="adjustDay('<?= $e($langKey) ?>_day', -1)">−</button>
+                                    <input type="text"
+                                           id="<?= $e($langKey) ?>_day"
+                                           name="<?= $e($langKey) ?>_day"
+                                           class="uk-input"
+                                           style="width:52px; text-align:center"
+                                           value="<?= $curD ?>"
+                                           readonly>
+                                    <button type="button" class="uk-button uk-button-default"
+                                            style="padding:0 10px; line-height:38px"
+                                            onclick="adjustDay('<?= $e($langKey) ?>_day', +1)">+</button>
+                                </div>
+                            </div>
                         </div>
                         <?php endforeach; ?>
 
@@ -215,22 +238,18 @@ $content = (function () use (
                     <div class="uk-card uk-card-default uk-card-body uk-border-rounded uk-margin-bottom">
                         <h3 class="uk-card-title"><?= $e(__('settings.renewal_calendar_title')) ?></h3>
                         <?php
-                        $year = (int) date('Y');
+                        $locale = $_SESSION['locale'] ?? 'it';
                         $cycle = [
-                            ['key' => 'renewal.date_open',            'label' => __('settings.renewal_open'),            'color' => '#1e87f0'],
-                            ['key' => 'renewal.date_first_reminder',  'label' => __('settings.renewal_first_reminder'),  'color' => '#f0c060'],
-                            ['key' => 'renewal.date_second_reminder', 'label' => __('settings.renewal_second_reminder'), 'color' => '#f08030'],
-                            ['key' => 'renewal.date_third_reminder',  'label' => __('settings.renewal_third_reminder'),  'color' => '#e06020'],
-                            ['key' => 'renewal.date_close',           'label' => __('settings.renewal_close'),           'color' => '#e05030'],
-                            ['key' => 'renewal.date_lapse',           'label' => __('settings.renewal_lapse'),           'color' => '#888'],
+                            ['key' => 'renewal.date_open',            'label' => __('settings.renewal_open'),            'color' => '#1e87f0', 'default' => '11-15'],
+                            ['key' => 'renewal.date_first_reminder',  'label' => __('settings.renewal_first_reminder'),  'color' => '#f0c060', 'default' => '02-15'],
+                            ['key' => 'renewal.date_second_reminder', 'label' => __('settings.renewal_second_reminder'), 'color' => '#f08030', 'default' => '03-15'],
+                            ['key' => 'renewal.date_third_reminder',  'label' => __('settings.renewal_third_reminder'),  'color' => '#e06020', 'default' => '04-15'],
+                            ['key' => 'renewal.date_close',           'label' => __('settings.renewal_close'),           'color' => '#e05030', 'default' => '04-15'],
+                            ['key' => 'renewal.date_lapse',           'label' => __('settings.renewal_lapse'),           'color' => '#888',    'default' => '12-31'],
                         ];
-                        $defaults = ['11-15','02-15','03-15','04-15','04-15','12-31'];
-                        foreach ($cycle as $i => $step):
-                            $mmdd  = $sv($step['key'], $defaults[$i]);
-                            $parts = explode('-', $mmdd);
-                            $label = (count($parts) === 2)
-                                ? date('j M', mktime(0, 0, 0, (int) $parts[0], (int) $parts[1], $year))
-                                : $mmdd;
+                        foreach ($cycle as $step):
+                            $mmdd  = $sv($step['key'], $step['default']);
+                            $label = format_month_day($mmdd, $locale);
                         ?>
                         <div class="uk-flex uk-flex-middle uk-margin-small-bottom">
                             <div style="width:12px; height:12px; border-radius:50%; background:<?= $e($step['color']) ?>; flex-shrink:0; margin-right:10px"></div>
@@ -891,48 +910,16 @@ $content = (function () use (
         }
     })();
 
-    // Flatpickr — month/day pickers for social year tab
-    document.querySelectorAll('[data-flatpickr-monthday]').forEach(function (el) {
-        var hiddenId = el.name.replace('_flatpickr', '_hidden');
-        var hidden   = document.getElementById(hiddenId);
-
-        // Build default date from stored MM-DD value (use year 2000 as placeholder)
-        var defaultDate = null;
-        if (hidden && hidden.value) {
-            var parts = hidden.value.split('-');
-            if (parts.length === 2) {
-                defaultDate = '2000-' + parts[0] + '-' + parts[1];
-            }
-        }
-
-        flatpickr(el, {
-            dateFormat:    'd/m',
-            allowInput:    true,
-            disableMobile: true,
-            defaultDate:   defaultDate,
-            locale: {
-                months: {
-                    shorthand: ['Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'],
-                    longhand:  ['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno',
-                                'Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre']
-                },
-                weekdays: {
-                    shorthand: ['Dom','Lun','Mar','Mer','Gio','Ven','Sab'],
-                    longhand:  ['Domenica','Lunedì','Martedì','Mercoledì','Giovedì','Venerdì','Sabato']
-                },
-                firstDayOfWeek: 1
-            },
-            onChange: function (selectedDates, dateStr) {
-                // dateStr is "DD/MM" — convert to MM-DD for the hidden field
-                if (dateStr && dateStr.indexOf('/') !== -1) {
-                    var p = dateStr.split('/');
-                    if (p.length === 2 && hidden) {
-                        hidden.value = p[1] + '-' + p[0];
-                    }
-                }
-            }
-        });
-    });
+    // +/- day adjuster for social year fields
+    function adjustDay(fieldId, delta) {
+        var input = document.getElementById(fieldId);
+        if (!input) return;
+        var val = parseInt(input.value, 10) || 1;
+        val += delta;
+        if (val < 1)  val = 1;
+        if (val > 31) val = 31;
+        input.value = val;
+    }
 
     // Date format preview — update static example on select change
     (function () {
@@ -956,8 +943,5 @@ $content = (function () use (
     <?php
     return (string) ob_get_clean();
 })();
-
-$pageHead = '<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">'
-          . '<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>';
 
 require __DIR__ . '/layout.php';
