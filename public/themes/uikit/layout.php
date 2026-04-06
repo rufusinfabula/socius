@@ -54,10 +54,10 @@
          *
          * Usage in templates:
          *   <span class="badge-member-number">
-         *     <?= $e(format_member_number($member['member_number'])) ?>
+         *     &lt;?= $e(format_member_number($member['member_number'])) ?&gt;
          *   </span>
          *   <span class="badge-card-number">
-         *     <?= $e(format_card_number($member['membership_number'])) ?>
+         *     &lt;?= $e(format_card_number($member['membership_number'])) ?&gt;
          *   </span>
          */
         .badge-member-number {
