@@ -274,7 +274,6 @@ theme('membership-form', [
     'isSuperAdmin' => $isSuperAdmin,
     'membership'   => $membership,
     'preMember'    => null,
-    'members'      => [],
     'categories'   => $categories,
     'categoryFees' => $categoryFees,
     // membership_number from the ms.* row is the source of truth for this card

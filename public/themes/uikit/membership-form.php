@@ -45,7 +45,7 @@ $catFeesJson = json_encode($categoryFees ?? [], JSON_FORCE_OBJECT);
 
 $content = (function () use (
     $ms, $v, $isEdit, $heading, $currentUser, $isSuperAdmin,
-    $preMember, $members, $categories, $nextNumber, $currentYear,
+    $preMember, $categories, $nextNumber, $currentYear,
     $statusOptions, $memberStatusOptions, $methodOptions,
     $catFeesJson, $error, $e
 ): string {
@@ -110,35 +110,50 @@ $content = (function () use (
                             </span>
                         </p>
                     </div>
-                    <?php elseif ($preMember): ?>
+                    <?php else: /* new mode — live search replaces the old <select> */ ?>
                     <div class="uk-margin">
-                        <label class="uk-form-label"><?= $e(__('memberships.box_member')) ?></label>
-                        <p class="uk-text-bold uk-margin-remove">
-                            <?= $e(($preMember['surname'] ?? '') . ' ' . ($preMember['name'] ?? '')) ?>
-                            &nbsp;
-                            <!-- badge-member-number: permanent M00001 -->
-                            <span class="badge-member-number">
-                                <?= $e(format_member_number(isset($preMember['member_number']) ? (int) $preMember['member_number'] : null)) ?>
-                            </span>
-                        </p>
-                        <input type="hidden" name="member_id" value="<?= (int) $preMember['id'] ?>">
-                    </div>
-                    <?php else: ?>
-                    <div class="uk-margin">
-                        <label class="uk-form-label uk-form-label" for="member_id">
+                        <label class="uk-form-label" for="member-search-input">
                             <?= $e(__('memberships.box_member')) ?> <span class="uk-text-danger">*</span>
                         </label>
-                        <select id="member_id" name="member_id" class="uk-select" required>
-                            <option value=""><?= $e(__('memberships.select_member')) ?></option>
-                            <?php foreach ($members as $mbr): ?>
-                            <option value="<?= (int) $mbr['id'] ?>"
-                                    <?= $memberId === (int) $mbr['id'] ? 'selected' : '' ?>>
-                                <?= $e($mbr['surname'] . ' ' . $mbr['name']) ?>
-                                — <code><?= $e($mbr['membership_number'] ?? 'N/D') ?></code>
-                                (N.<?= (int) $mbr['member_number'] ?>)
-                            </option>
-                            <?php endforeach; ?>
-                        </select>
+                        <!-- Live member search — queries api/members-search.php -->
+                        <div style="position:relative">
+                            <input type="text"
+                                   id="member-search-input"
+                                   class="uk-input"
+                                   placeholder="<?= $e(__('memberships.search_member_placeholder')) ?>"
+                                   autocomplete="off"
+                                   <?php if ($preMember): ?>readonly style="background:#f8f8f8"<?php endif; ?>>
+                            <div id="member-search-results"
+                                 style="position:absolute; z-index:1000; width:100%;
+                                        background:#fff; border:1px solid #e5e5e5;
+                                        border-radius:4px; max-height:300px;
+                                        overflow-y:auto; display:none;
+                                        box-shadow:0 4px 12px rgba(0,0,0,0.1)">
+                            </div>
+                        </div>
+                        <input type="hidden"
+                               name="member_id"
+                               id="member-id-hidden"
+                               value="<?= $preMember ? (int) $preMember['id'] : '' ?>">
+                        <div id="member-selected"
+                             style="<?= $preMember ? '' : 'display:none; ' ?>margin-top:8px; padding:8px 12px; background:#f8f8f8; border-radius:4px">
+                            <span id="member-selected-name">
+                                <?php if ($preMember): ?>
+                                <?= $e(($preMember['surname'] ?? '') . ' ' . ($preMember['name'] ?? '')) ?>
+                                <?php endif; ?>
+                            </span>
+                            &nbsp;
+                            <span class="badge-member-number" id="member-selected-number">
+                                <?php if ($preMember && isset($preMember['member_number'])): ?>
+                                <?= $e(format_member_number((int) $preMember['member_number'])) ?>
+                                <?php endif; ?>
+                            </span>
+                            <?php if (!$preMember): ?>
+                            <button type="button"
+                                    onclick="clearMemberSelection()"
+                                    style="float:right; background:none; border:none; cursor:pointer; color:#999">✕</button>
+                            <?php endif; ?>
+                        </div>
                     </div>
                     <?php endif; ?>
 
@@ -527,6 +542,90 @@ $content = (function () use (
             box.style.display = '';
         }
     }
+
+    <?php if (!$isEdit): // Live search — new membership mode only ?>
+    var memberSearchTimeout = null;
+    var searchInput = document.getElementById('member-search-input');
+
+    if (searchInput && !searchInput.readOnly) {
+        searchInput.addEventListener('input', function() {
+            clearTimeout(memberSearchTimeout);
+            var q = this.value.trim();
+            if (q.length < 2) {
+                document.getElementById('member-search-results').style.display = 'none';
+                return;
+            }
+            memberSearchTimeout = setTimeout(function() {
+                fetch('api/members-search.php?q=' + encodeURIComponent(q) + '&limit=10')
+                    .then(function(r) { return r.json(); })
+                    .then(function(data) {
+                        var results = document.getElementById('member-search-results');
+                        if (!data.members || data.members.length === 0) {
+                            results.innerHTML = '<div style="padding:12px; color:#999">Nessun socio trovato.</div>';
+                            results.style.display = 'block';
+                            return;
+                        }
+                        results.innerHTML = data.members.map(function(m) {
+                            return '<div class="member-search-item"'
+                                + ' style="padding:10px 14px; cursor:pointer; border-bottom:1px solid #f0f0f0"'
+                                + ' onmouseover="this.style.background=\'#f5f5f5\'"'
+                                + ' onmouseout="this.style.background=\'\'"'
+                                + ' onclick="selectMember(' + m.id + ',\''
+                                + m.surname.replace(/\\/g,'\\\\').replace(/'/g,"\\'") + ' '
+                                + m.name.replace(/\\/g,'\\\\').replace(/'/g,"\\'")
+                                + '\',\'' + m.member_number + '\')">'
+                                + '<strong>' + m.surname + ' ' + m.name + '</strong>'
+                                + ' <span class="badge-member-number">' + m.member_number + '</span>'
+                                + ' <span style="color:#999; font-size:0.85em">' + m.status_label + '</span>'
+                                + '</div>';
+                        }).join('');
+                        results.style.display = 'block';
+                    })
+                    .catch(function() {
+                        document.getElementById('member-search-results').style.display = 'none';
+                    });
+            }, 300);
+        });
+    }
+
+    function selectMember(id, fullName, memberNumber) {
+        document.getElementById('member-id-hidden').value = id;
+        document.getElementById('member-search-input').value = '';
+        document.getElementById('member-search-results').style.display = 'none';
+        document.getElementById('member-selected-name').textContent = fullName + ' ';
+        document.getElementById('member-selected-number').textContent = memberNumber;
+        document.getElementById('member-selected').style.display = 'block';
+
+        // Pre-fill category from member's current category
+        fetch('api/member.php?id=' + id)
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.member && data.member.category_id) {
+                    var catSelect = document.querySelector('[name="category_id"]');
+                    if (catSelect) {
+                        catSelect.value = data.member.category_id;
+                        catSelect.dispatchEvent(new Event('change'));
+                    }
+                }
+            });
+    }
+
+    function clearMemberSelection() {
+        document.getElementById('member-id-hidden').value = '';
+        document.getElementById('member-selected').style.display = 'none';
+        document.getElementById('member-search-input').value = '';
+        document.getElementById('member-search-input').focus();
+    }
+
+    // Close results when clicking outside
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('#member-search-input')
+                && !e.target.closest('#member-search-results')) {
+            var results = document.getElementById('member-search-results');
+            if (results) results.style.display = 'none';
+        }
+    });
+    <?php endif; ?>
     </script>
 
     <?php

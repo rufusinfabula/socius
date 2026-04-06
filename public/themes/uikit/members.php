@@ -62,16 +62,19 @@ $content = (function () use (
     </div>
     <?php endif; ?>
 
-    <!-- Filters -->
-    <form method="get" action="members.php" class="uk-form-small uk-margin-bottom">
+    <!-- Filters — the search field also drives the live search below -->
+    <form method="get" action="members.php" class="uk-form-small uk-margin-bottom" id="members-filter-form">
         <div class="uk-grid-small uk-flex-middle" uk-grid>
             <div class="uk-width-expand@s">
-                <input class="uk-input uk-form-small" type="text" name="search"
+                <input class="uk-input uk-form-small" type="text"
+                       id="members-search-input"
+                       name="search"
                        value="<?= $e($filters['search']) ?>"
-                       placeholder="Cerca per nome, cognome, email, numero tessera…">
+                       placeholder="Cerca per nome, cognome, email, numero tessera…"
+                       autocomplete="off">
             </div>
             <div class="uk-width-auto">
-                <select class="uk-select uk-form-small" name="status">
+                <select class="uk-select uk-form-small" name="status" id="members-status-filter">
                     <option value=""><?= $e(__('members.filter_all_statuses')) ?></option>
                     <?php foreach (array_keys($statusLabel) as $s): ?>
                         <option value="<?= $e($s) ?>" <?= $filters['status'] === $s ? 'selected' : '' ?>>
@@ -82,7 +85,7 @@ $content = (function () use (
             </div>
             <?php if (!empty($categories)): ?>
             <div class="uk-width-auto">
-                <select class="uk-select uk-form-small" name="category">
+                <select class="uk-select uk-form-small" name="category" id="members-category-filter">
                     <option value="">Tutte le categorie</option>
                     <?php foreach ($categories as $cat): ?>
                         <option value="<?= (int) $cat['id'] ?>"
@@ -100,7 +103,8 @@ $content = (function () use (
         </div>
     </form>
 
-    <!-- Table -->
+    <!-- Table — initial content from PHP; replaced by live search when typing -->
+    <div id="members-table-wrapper">
     <?php if (empty($members['items'])): ?>
         <p class="uk-text-muted">Nessun socio trovato.</p>
     <?php else: ?>
@@ -183,6 +187,91 @@ $content = (function () use (
     <?php endif; ?>
 
     <?php endif; ?>
+    </div><!-- /#members-table-wrapper -->
+
+    <script>
+    // Live search: replaces table contents via api/members-search.php when typing
+    // Falls back to normal page load when query is cleared
+    (function() {
+        var searchInput    = document.getElementById('members-search-input');
+        var tableWrapper   = document.getElementById('members-table-wrapper');
+        var statusFilter   = document.getElementById('members-status-filter');
+        var searchTimeout  = null;
+        var lastQuery      = '';
+
+        if (!searchInput || !tableWrapper) return;
+
+        var statusLabels = <?= json_encode(array_map(fn($v) => (string) $v, $statusLabel)) ?>;
+        var statusColors = <?= json_encode($statusColor) ?>;
+
+        function buildRow(m) {
+            var color = statusColors[m.status] || '#1e87f0';
+            return '<tr>'
+                + '<td><span class="badge-member-number">' + m.member_number + '</span></td>'
+                + '<td>' + esc(m.surname) + '</td>'
+                + '<td>' + esc(m.name) + '</td>'
+                + '<td>' + esc(m.email) + '</td>'
+                + '<td><span class="uk-label" style="background:' + color + ';color:#fff">'
+                + esc(m.status_label) + '</span></td>'
+                + '<td>'
+                + '<a href="member.php?id=' + m.id + '" class="uk-icon-button" uk-icon="eye" title="Visualizza"></a>'
+                + '<a href="member-edit.php?id=' + m.id + '" class="uk-icon-button uk-margin-small-left" uk-icon="pencil" title="Modifica"></a>'
+                + '</td>'
+                + '</tr>';
+        }
+
+        function esc(s) {
+            return String(s)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;');
+        }
+
+        function renderResults(data) {
+            var members = data.members || [];
+            if (members.length === 0) {
+                tableWrapper.innerHTML = '<p class="uk-text-muted">Nessun socio trovato.</p>';
+                return;
+            }
+            var rows = members.map(buildRow).join('');
+            tableWrapper.innerHTML = '<div class="uk-overflow-auto">'
+                + '<table class="uk-table uk-table-striped uk-table-hover uk-table-small">'
+                + '<thead><tr>'
+                + '<th>N. Socio</th><th>Cognome</th><th>Nome</th>'
+                + '<th>Email</th><th>Stato</th><th>Azioni</th>'
+                + '</tr></thead>'
+                + '<tbody>' + rows + '</tbody>'
+                + '</table></div>'
+                + '<p class="uk-text-small uk-text-muted uk-text-center">'
+                + data.total + ' risultati per &ldquo;' + esc(data.query) + '&rdquo;</p>';
+        }
+
+        function doSearch(q) {
+            var status = statusFilter ? statusFilter.value : '';
+            var url = 'api/members-search.php?q=' + encodeURIComponent(q)
+                + '&limit=50'
+                + (status ? '&status=' + encodeURIComponent(status) : '');
+            fetch(url)
+                .then(function(r) { return r.json(); })
+                .then(renderResults)
+                .catch(function() {});
+        }
+
+        searchInput.addEventListener('input', function() {
+            clearTimeout(searchTimeout);
+            var q = this.value.trim();
+            if (q === lastQuery) return;
+            lastQuery = q;
+            if (q.length < 2) {
+                // Reload page without search param to restore PHP-rendered list
+                if (q.length === 0) window.location.href = 'members.php';
+                return;
+            }
+            searchTimeout = setTimeout(function() { doSearch(q); }, 300);
+        });
+    })();
+    </script>
 
     <?php
     return (string) ob_get_clean();

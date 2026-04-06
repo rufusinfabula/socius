@@ -24,8 +24,9 @@ return [
     // -------------------------------------------------------------------------
     'social_year'          => 'Social year',
     'membership_number'    => 'Card No.',
-    'next_available'       => 'next available',
-    'membership_number_hint' => 'Leave unchanged to use the proposed number.',
+    'next_available'            => 'next available',
+    'membership_number_hint'    => 'Leave unchanged to use the proposed number.',
+    'search_member_placeholder' => 'Search by name, surname or member number (e.g. M00001)…',
     'fee'                  => 'Fee',
     'paid_on'              => 'Paid on',
     'payment_method'       => 'Payment method',

@@ -3,6 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!--
+      Socius Internal API — available endpoints:
+
+      GET api/members-search.php?q=&limit=&status=
+          Search members by name, surname or member number.
+          Used in: membership-new (member selection), communications,
+                   assemblies, minutes.
+
+      GET api/member.php?id=
+          Full data for a single member (current membership, board role).
+          Sensitive fields only for role_id <= 2.
+          Used in: membership-new (pre-fill category after member selection).
+
+      GET api/members-list.php?status=&category_id=&board=&year=&page=&per_page=&q=
+          Paginated filtered member list.
+          Used in: communications, assemblies, renewals.
+
+      GET api/member-stats.php?year=
+          Aggregate statistics (cached 5 min in storage/cache/).
+          Used in: dashboard.
+
+      All endpoints require authentication (requireAuth()).
+      All endpoints return JSON with Content-Type: application/json.
+      Sensitive fields (fiscal_code, notes, address) only for admin/segreteria.
+    -->
     <title><?= htmlspecialchars((string) ($pageTitle ?? \Socius\Core\Config::get('app.name', 'Socius')), ENT_QUOTES, 'UTF-8') ?> — <?= htmlspecialchars((string) \Socius\Core\Config::get('app.name', 'Socius'), ENT_QUOTES, 'UTF-8') ?></title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/uikit@3/dist/css/uikit.min.css">
     <?php if (!empty($pageHead)) echo $pageHead; ?>

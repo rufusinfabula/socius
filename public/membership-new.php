@@ -41,14 +41,7 @@ try {
     );
 } catch (\Throwable) {}
 
-try {
-    $members = $db->fetchAll(
-        'SELECT id, member_number, membership_number, name, surname
-           FROM members
-          WHERE status NOT IN (\'resigned\', \'deceased\')
-          ORDER BY surname ASC, name ASC'
-    );
-} catch (\Throwable) {}
+// $members no longer needed — member selection uses live search (api/members-search.php)
 
 // Next available card number (C00001 format).
 // If the member already has a card number, pre-fill with it.
@@ -141,11 +134,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
 
             if ($error === null) {
-                $db->transaction(function ($db) use (
+                // NOTE: flash_set() and redirect() are intentionally placed OUTSIDE
+                // the transaction callback. Calling redirect() (which calls exit) inside
+                // the callback would terminate PHP before Database::transaction() can call
+                // $this->commit(), causing all inserts to be silently rolled back.
+                $newMembershipId = $db->transaction(function ($db) use (
                     $memberId, $year, $categoryId, $fee, $status,
                     $cardNumber, $method, $paidOn, $reference, $notes,
                     $member, $category, $currentUser
-                ): void {
+                ): int {
                     $isExempt = (bool) ($category['is_exempt_from_renewal'] ?? false);
 
                     // Determine final status
@@ -238,9 +235,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         'user_agent'  => substr($_SERVER['HTTP_USER_AGENT'] ?? '', 0, 512),
                     ]);
 
-                    flash_set('success', __('memberships.created_ok'));
-                    redirect('membership.php?id=' . $membershipId);
+                    return $membershipId;
                 });
+
+                flash_set('success', __('memberships.created_ok'));
+                redirect('membership.php?id=' . $newMembershipId);
             }
         } catch (\RuntimeException $ex) {
             // redirect was called inside the transaction callback; if we get here it's an error
@@ -263,7 +262,6 @@ theme('membership-form', [
     'isEdit'       => false,
     'membership'   => $formData,
     'preMember'    => $preMember,
-    'members'      => $members,
     'categories'   => $categories,
     'categoryFees' => $categoryFees,
     'nextNumber'   => $nextNumber,
