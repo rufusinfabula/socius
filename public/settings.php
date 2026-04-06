@@ -88,22 +88,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // -----------------------------------------------------------------
         case 'social_year':
             try {
-                // Selects send month and day separately; combine to MM-DD
-                $toMMDD = static function (string $month, string $day, string $default): string {
-                    $m = (int) $month;
-                    $d = (int) $day;
-                    if ($m >= 1 && $m <= 12 && $d >= 1 && $d <= 31) {
-                        return sprintf('%02d-%02d', $m, $d);
+                // Hidden fields carry MM-DD values set by Flatpickr onChange
+                $toMMDD = static function (string $val, string $default): string {
+                    if (preg_match('/^\d{2}-\d{2}$/', $val)) {
+                        return $val;
                     }
                     return $default;
                 };
                 Setting::setMultiple([
-                    'renewal.date_open'            => $toMMDD((string) ($_POST['renewal_open_month'] ?? ''), (string) ($_POST['renewal_open_day'] ?? ''), '11-15'),
-                    'renewal.date_first_reminder'  => $toMMDD((string) ($_POST['renewal_first_reminder_month'] ?? ''), (string) ($_POST['renewal_first_reminder_day'] ?? ''), '02-15'),
-                    'renewal.date_second_reminder' => $toMMDD((string) ($_POST['renewal_second_reminder_month'] ?? ''), (string) ($_POST['renewal_second_reminder_day'] ?? ''), '03-15'),
-                    'renewal.date_third_reminder'  => $toMMDD((string) ($_POST['renewal_third_reminder_month'] ?? ''), (string) ($_POST['renewal_third_reminder_day'] ?? ''), '04-15'),
-                    'renewal.date_close'           => $toMMDD((string) ($_POST['renewal_close_month'] ?? ''), (string) ($_POST['renewal_close_day'] ?? ''), '04-15'),
-                    'renewal.date_lapse'           => $toMMDD((string) ($_POST['renewal_lapse_month'] ?? ''), (string) ($_POST['renewal_lapse_day'] ?? ''), '12-31'),
+                    'renewal.date_open'            => $toMMDD((string) ($_POST['renewal_open'] ?? ''), '11-15'),
+                    'renewal.date_first_reminder'  => $toMMDD((string) ($_POST['renewal_first_reminder'] ?? ''), '02-15'),
+                    'renewal.date_second_reminder' => $toMMDD((string) ($_POST['renewal_second_reminder'] ?? ''), '03-15'),
+                    'renewal.date_third_reminder'  => $toMMDD((string) ($_POST['renewal_third_reminder'] ?? ''), '04-15'),
+                    'renewal.date_close'           => $toMMDD((string) ($_POST['renewal_close'] ?? ''), '04-15'),
+                    'renewal.date_lapse'           => $toMMDD((string) ($_POST['renewal_lapse'] ?? ''), '12-31'),
                     'renewal.reminder_approval'    => isset($_POST['renewal_reminder_approval']) ? 'true' : 'false',
                 ]);
                 csrf_regenerate();

@@ -180,44 +180,22 @@ $content = (function () use (
                             'renewal.date_close'           => '04-15',
                             'renewal.date_lapse'           => '12-31',
                         ];
-                        $monthOptions = [
-                            1  => 'Gennaio / January',
-                            2  => 'Febbraio / February',
-                            3  => 'Marzo / March',
-                            4  => 'Aprile / April',
-                            5  => 'Maggio / May',
-                            6  => 'Giugno / June',
-                            7  => 'Luglio / July',
-                            8  => 'Agosto / August',
-                            9  => 'Settembre / September',
-                            10 => 'Ottobre / October',
-                            11 => 'Novembre / November',
-                            12 => 'Dicembre / December',
-                        ];
                         foreach ($renewalFields as $key => $langKey):
-                            $mmdd  = $sv($key, $renewalDefaults[$key]);
-                            $parts = explode('-', $mmdd);
-                            $curM  = (count($parts) === 2) ? (int) $parts[0] : 0;
-                            $curD  = (count($parts) === 2) ? (int) $parts[1] : 0;
+                            $mmdd = $sv($key, $renewalDefaults[$key]);
                         ?>
                         <div class="uk-margin">
                             <label class="uk-form-label"><?= $e(__("settings.{$langKey}")) ?></label>
-                            <div style="display:flex; gap:8px; align-items:center">
-                                <select class="uk-select" name="<?= $e($langKey) ?>_month" style="width:auto">
-                                    <?php foreach ($monthOptions as $num => $label): ?>
-                                    <option value="<?= $num ?>" <?= $curM === $num ? 'selected' : '' ?>>
-                                        <?= $e($label) ?>
-                                    </option>
-                                    <?php endforeach; ?>
-                                </select>
-                                <select class="uk-select" name="<?= $e($langKey) ?>_day" style="width:auto">
-                                    <?php for ($d = 1; $d <= 31; $d++): ?>
-                                    <option value="<?= $d ?>" <?= $curD === $d ? 'selected' : '' ?>>
-                                        <?= sprintf('%02d', $d) ?>
-                                    </option>
-                                    <?php endfor; ?>
-                                </select>
-                            </div>
+                            <input type="text"
+                                   name="<?= $e($langKey) ?>_flatpickr"
+                                   class="uk-input"
+                                   placeholder="GG/MM"
+                                   style="max-width:130px"
+                                   data-flatpickr-monthday
+                                   autocomplete="off">
+                            <input type="hidden"
+                                   name="<?= $e($langKey) ?>"
+                                   id="<?= $e($langKey) ?>_hidden"
+                                   value="<?= $e($mmdd) ?>">
                         </div>
                         <?php endforeach; ?>
 
@@ -672,16 +650,18 @@ $content = (function () use (
 
                 <div class="uk-margin">
                     <label class="uk-form-label"><?= $e(__('settings.date_format')) ?></label>
-                    <select class="uk-select" name="ui_date_format">
-                        <?php
-                        $formats    = ['d/m/Y' => 'GG/MM/AAAA', 'm/d/Y' => 'MM/GG/AAAA', 'Y-m-d' => 'AAAA-MM-GG'];
-                        $curFormat  = $sv('ui.date_format', 'd/m/Y');
-                        foreach ($formats as $val => $lbl): ?>
-                        <option value="<?= $e($val) ?>" <?= $curFormat === $val ? 'selected' : '' ?>>
-                            <?= $e($lbl) ?>
-                        </option>
-                        <?php endforeach; ?>
+                    <?php $curFormat = $sv('ui.date_format', 'd/m/Y'); ?>
+                    <select class="uk-select" name="ui_date_format" id="ui_date_format_select">
+                        <option value="d/m/Y"  <?= $curFormat === 'd/m/Y'  ? 'selected' : '' ?>>GG/MM/AAAA — es. 15/11/2026</option>
+                        <option value="d/m/y"  <?= $curFormat === 'd/m/y'  ? 'selected' : '' ?>>GG/MM/AA — es. 15/11/26</option>
+                        <option value="d F Y"  <?= $curFormat === 'd F Y'  ? 'selected' : '' ?>>GG Mese AAAA — es. 15 Novembre 2026</option>
+                        <option value="m/d/Y"  <?= $curFormat === 'm/d/Y'  ? 'selected' : '' ?>>MM/GG/AAAA — es. 11/15/2026</option>
+                        <option value="Y-m-d"  <?= $curFormat === 'Y-m-d'  ? 'selected' : '' ?>>AAAA-MM-GG — es. 2026-11-15 (ISO)</option>
                     </select>
+                    <p class="uk-text-small uk-text-muted uk-margin-remove-top" style="margin-top:4px">
+                        <?= $e(__('settings.date_format_preview')) ?>
+                        <strong id="date-preview"><?= $e(format_date(date('Y-m-d'))) ?></strong>
+                    </p>
                 </div>
 
                 <div class="uk-margin">
@@ -910,10 +890,74 @@ $content = (function () use (
             });
         }
     })();
+
+    // Flatpickr — month/day pickers for social year tab
+    document.querySelectorAll('[data-flatpickr-monthday]').forEach(function (el) {
+        var hiddenId = el.name.replace('_flatpickr', '_hidden');
+        var hidden   = document.getElementById(hiddenId);
+
+        // Build default date from stored MM-DD value (use year 2000 as placeholder)
+        var defaultDate = null;
+        if (hidden && hidden.value) {
+            var parts = hidden.value.split('-');
+            if (parts.length === 2) {
+                defaultDate = '2000-' + parts[0] + '-' + parts[1];
+            }
+        }
+
+        flatpickr(el, {
+            dateFormat:    'd/m',
+            allowInput:    true,
+            disableMobile: true,
+            defaultDate:   defaultDate,
+            locale: {
+                months: {
+                    shorthand: ['Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'],
+                    longhand:  ['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno',
+                                'Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre']
+                },
+                weekdays: {
+                    shorthand: ['Dom','Lun','Mar','Mer','Gio','Ven','Sab'],
+                    longhand:  ['Domenica','Lunedì','Martedì','Mercoledì','Giovedì','Venerdì','Sabato']
+                },
+                firstDayOfWeek: 1
+            },
+            onChange: function (selectedDates, dateStr) {
+                // dateStr is "DD/MM" — convert to MM-DD for the hidden field
+                if (dateStr && dateStr.indexOf('/') !== -1) {
+                    var p = dateStr.split('/');
+                    if (p.length === 2 && hidden) {
+                        hidden.value = p[1] + '-' + p[0];
+                    }
+                }
+            }
+        });
+    });
+
+    // Date format preview — update static example on select change
+    (function () {
+        var sel      = document.getElementById('ui_date_format_select');
+        var preview  = document.getElementById('date-preview');
+        var examples = {
+            'd/m/Y': '15/11/2026',
+            'd/m/y': '15/11/26',
+            'd F Y': '15 Novembre 2026',
+            'm/d/Y': '11/15/2026',
+            'Y-m-d': '2026-11-15'
+        };
+        if (sel && preview) {
+            sel.addEventListener('change', function () {
+                preview.textContent = examples[this.value] || this.value;
+            });
+        }
+    })();
     </script>
 
     <?php
     return (string) ob_get_clean();
 })();
+
+$pageHead = '<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">'
+          . '<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>';
 
 require __DIR__ . '/layout.php';

@@ -58,7 +58,7 @@ $content = (function () use (
                     <?php if (!empty($member['category_name'])): ?>
                         &nbsp;·&nbsp; <?= $e($member['category_name']) ?>
                     <?php endif; ?>
-                    &nbsp;·&nbsp; <?= $e(__('members.joined_on')) ?>: <?= $e($member['joined_on'] ?? '—') ?>
+                    &nbsp;·&nbsp; <?= $e(__('members.joined_on')) ?>: <?= $e(format_date($member['joined_on'] ?? '')) ?>
                 </p>
             </div>
             <div>
@@ -117,7 +117,7 @@ $content = (function () use (
                     <!-- Data di nascita -->
                     <div class="uk-width-1-2@s">
                         <p class="uk-text-muted uk-text-small uk-margin-remove-bottom"><?= $e(__('members.birth_date')) ?></p>
-                        <p class="uk-margin-remove-top"><?= $e($member['birth_date'] ?? '—') ?></p>
+                        <p class="uk-margin-remove-top"><?= $e(format_date($member['birth_date'] ?? '')) ?></p>
                     </div>
 
                     <!-- Luogo di nascita -->
@@ -206,7 +206,7 @@ $content = (function () use (
                 <!-- Data iscrizione -->
                 <div class="uk-margin">
                     <p class="uk-text-muted uk-text-small uk-margin-remove-bottom"><?= $e(__('members.joined_on')) ?></p>
-                    <p class="uk-margin-remove-top"><?= $e($member['joined_on'] ?? '—') ?></p>
+                    <p class="uk-margin-remove-top"><?= $e(format_date($member['joined_on'] ?? '')) ?></p>
                 </div>
 
                 <!-- Categoria -->
@@ -221,7 +221,7 @@ $content = (function () use (
                 <?php if (!empty($member['resigned_on'])): ?>
                 <div class="uk-margin">
                     <p class="uk-text-muted uk-text-small uk-margin-remove-bottom"><?= $e(__('members.resigned_on')) ?></p>
-                    <p class="uk-margin-remove-top"><?= $e($member['resigned_on']) ?></p>
+                    <p class="uk-margin-remove-top"><?= $e(format_date($member['resigned_on'])) ?></p>
                 </div>
                 <?php endif; ?>
 
@@ -331,7 +331,7 @@ $content = (function () use (
                 <tr>
                     <td><?= (int) $ms['year'] ?></td>
                     <td>€ <?= number_format((float) $ms['fee'], 2, ',', '.') ?></td>
-                    <td><?= $e(($ms['valid_from'] ?? '') . ' / ' . ($ms['valid_until'] ?? '')) ?></td>
+                    <td><?= $e(format_date($ms['valid_from'] ?? '') . ' / ' . format_date($ms['valid_until'] ?? '')) ?></td>
                     <td>
                         <span class="uk-label uk-label-<?= $e($membershipStatusUkLabel[$ms['status']] ?? 'default') ?>">
                             <?= $e($ms['status']) ?>
@@ -381,9 +381,9 @@ $content = (function () use (
                     <?php endif; ?>
                 </div>
                 <div class="uk-text-small uk-text-muted">
-                    <?= $e(__('members.board_elected_on')) ?> <?= $e($br['elected_on']) ?>
+                    <?= $e(__('members.board_elected_on')) ?> <?= $e(format_date($br['elected_on'])) ?>
                     <?php if (!empty($br['expires_on'])): ?>
-                        &nbsp;–&nbsp; <?= $e(__('members.board_expires_on')) ?> <?= $e($br['expires_on']) ?>
+                        &nbsp;–&nbsp; <?= $e(__('members.board_expires_on')) ?> <?= $e(format_date($br['expires_on'])) ?>
                     <?php endif; ?>
                 </div>
             </li>
@@ -402,11 +402,11 @@ $content = (function () use (
                     <span class="uk-text-muted"><?= $e(__('members.board_past')) ?></span>
                     <strong class="uk-margin-small-left"><?= $e($br['role_label']) ?></strong>
                     <span class="uk-text-muted uk-margin-small-left">
-                        <?= $e($br['elected_on']) ?>
+                        <?= $e(format_date($br['elected_on'])) ?>
                         <?php if (!empty($br['resigned_on'])): ?>
-                            &nbsp;–&nbsp; <?= $e(__('members.board_resigned_on')) ?> <?= $e($br['resigned_on']) ?>
+                            &nbsp;–&nbsp; <?= $e(__('members.board_resigned_on')) ?> <?= $e(format_date($br['resigned_on'])) ?>
                         <?php elseif (!empty($br['expires_on'])): ?>
-                            &nbsp;–&nbsp; <?= $e($br['expires_on']) ?>
+                            &nbsp;–&nbsp; <?= $e(format_date($br['expires_on'])) ?>
                         <?php endif; ?>
                     </span>
                 </li>
@@ -442,7 +442,7 @@ $content = (function () use (
             <tbody>
                 <?php foreach ($payments as $pay): ?>
                 <tr>
-                    <td><?= $e($pay['paid_at']) ?></td>
+                    <td><?= $e(format_date($pay['paid_at'] ?? '', true)) ?></td>
                     <td>€ <?= number_format((float) $pay['amount'], 2, ',', '.') ?></td>
                     <td><?= $e($pay['gateway']) ?></td>
                     <td><?= $e($pay['status']) ?></td>

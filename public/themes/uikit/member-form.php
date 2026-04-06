@@ -123,7 +123,7 @@ $content = (function () use (
                         <div class="uk-width-1-2@s">
                             <label class="uk-form-label" for="birth_date"><?= $e(__('members.birth_date')) ?></label>
                             <input class="uk-input" type="date" id="birth_date" name="birth_date"
-                                   value="<?= $v('birth_date') ?>">
+                                   value="<?= format_date_iso($member['birth_date'] ?? '') ?>">
                         </div>
 
                         <!-- Luogo di nascita -->
@@ -238,7 +238,7 @@ $content = (function () use (
                     <div class="uk-margin">
                         <label class="uk-form-label" for="joined_on"><?= $e(__('members.joined_on')) ?> *</label>
                         <input class="uk-input" type="date" id="joined_on" name="joined_on"
-                               value="<?= $v('joined_on', date('Y-m-d')) ?>" required>
+                               value="<?= format_date_iso($member['joined_on'] ?? '') ?: date('Y-m-d') ?>" required>
                     </div>
 
                     <!-- Note interne (staff only) -->
@@ -358,7 +358,7 @@ $content = (function () use (
                     <div class="uk-margin">
                         <label class="uk-form-label" for="board_elected_on"><?= $e(__('members.board_role_from')) ?></label>
                         <input class="uk-input" type="date" id="board_elected_on" name="board_elected_on"
-                               value="<?= $e($currentBoardRole['elected_on'] ?? date('Y-m-d')) ?>">
+                               value="<?= format_date_iso($currentBoardRole['elected_on'] ?? '') ?: date('Y-m-d') ?>">
                     </div>
                 </div>
 

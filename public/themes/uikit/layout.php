@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= htmlspecialchars((string) ($pageTitle ?? \Socius\Core\Config::get('app.name', 'Socius')), ENT_QUOTES, 'UTF-8') ?> — <?= htmlspecialchars((string) \Socius\Core\Config::get('app.name', 'Socius'), ENT_QUOTES, 'UTF-8') ?></title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/uikit@3/dist/css/uikit.min.css">
+    <?php if (!empty($pageHead)) echo $pageHead; ?>
     <style>
         .uk-sidebar { min-height: calc(100vh - 80px); background: #f8f8f8; border-right: 1px solid #e5e5e5; }
         .uk-sidebar .uk-nav-default > li > a { padding: 8px 20px; font-size: 0.9rem; }

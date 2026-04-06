@@ -242,3 +242,40 @@ function client_ip(): string
         ?? $_SERVER['REMOTE_ADDR']
         ?? '');
 }
+
+/**
+ * Format a date string according to the configured ui.date_format setting.
+ * Returns '—' for empty/null/zero dates.
+ */
+function format_date(string $date, bool $withTime = false): string
+{
+    if ($date === '' || $date === '0000-00-00' || $date === '0000-00-00 00:00:00') {
+        return '—';
+    }
+    try {
+        $dt     = new \DateTime($date);
+        $format = \Socius\Models\Setting::get('ui.date_format', 'd/m/Y');
+        if ($withTime) {
+            $format .= ' H:i';
+        }
+        return $dt->format($format);
+    } catch (\Throwable) {
+        return $date;
+    }
+}
+
+/**
+ * Format a date as Y-m-d for use in input type="date" value attributes.
+ * Returns '' for empty/null/zero dates.
+ */
+function format_date_iso(string $date): string
+{
+    if ($date === '' || $date === '0000-00-00' || $date === '0000-00-00 00:00:00') {
+        return '';
+    }
+    try {
+        return (new \DateTime($date))->format('Y-m-d');
+    } catch (\Throwable) {
+        return '';
+    }
+}
