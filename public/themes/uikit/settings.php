@@ -180,7 +180,6 @@ $content = (function () use (
                             'renewal.date_close'           => '04-15',
                             'renewal.date_lapse'           => '12-31',
                         ];
-                        <?php
                         $locale = $_SESSION['locale'] ?? 'it';
                         $monthNames = ($locale === 'en')
                             ? ['', 'January', 'February', 'March', 'April', 'May', 'June',
