@@ -87,7 +87,7 @@ class Setting extends BaseModel
 
         self::db()->query(
             'INSERT INTO `settings` (`key`, `value`, `group`) VALUES (?, ?, ?)
-             ON DUPLICATE KEY UPDATE `value` = VALUES(`value`)',
+             ON DUPLICATE KEY UPDATE `value` = VALUES(`value`), `group` = VALUES(`group`)',
             [$key, $val, $group]
         );
 
