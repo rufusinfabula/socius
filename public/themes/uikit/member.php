@@ -54,7 +54,16 @@ $content = (function () use (
                     </span>
                 </h2>
                 <p class="uk-text-muted uk-margin-remove">
-                    <code><?= $e($member['membership_number'] ?? '—') ?></code>
+                    <!-- Permanent member number (blue) -->
+                    <span class="badge-member-number">
+                        <?= $e(format_member_number(isset($member['member_number']) ? (int) $member['member_number'] : null)) ?>
+                    </span>
+                    <!-- Active card number (green), if any -->
+                    <?php if (!empty($member['membership_number'])): ?>
+                    &nbsp;<span class="badge-card-number">
+                        <?= $e(format_card_number($member['membership_number'])) ?>
+                    </span>
+                    <?php endif; ?>
                     <?php if (!empty($member['category_name'])): ?>
                         &nbsp;·&nbsp; <?= $e($member['category_name']) ?>
                     <?php endif; ?>
@@ -169,23 +178,41 @@ $content = (function () use (
                 </div>
                 <?php endif; ?>
 
-                <!-- N. Tessera + N. Socio (stesso peso visivo, due colonne) -->
+                <!-- N. Socio (permanent, blue) + N. Tessera attiva (green) -->
                 <?php $isActive = in_array($s, ['active', 'in_renewal'], true); ?>
                 <div class="uk-grid uk-grid-small uk-margin" uk-grid>
 
+                    <!-- badge-member-number: permanent M00001 identifier, never changes -->
                     <div class="uk-width-1-2">
-                        <p class="uk-text-muted uk-text-small uk-margin-remove-bottom"><?= $e(__('members.membership_number')) ?></p>
-                        <p class="uk-margin-remove"><code><?= $e($member['membership_number'] ?? '—') ?></code></p>
+                        <p class="uk-text-muted uk-text-small uk-margin-remove-bottom">
+                            <?= $e(__('members.member_number_label')) ?>
+                        </p>
+                        <p class="uk-margin-remove">
+                            <span class="badge-member-number">
+                                <?= $e(format_member_number(isset($member['member_number']) ? (int) $member['member_number'] : null)) ?>
+                            </span>
+                        </p>
                         <p class="uk-text-muted uk-margin-remove" style="font-size:0.75rem">
-                            <?= $isActive ? $e(__('members.membership_active')) : $e(__('members.membership_not_active')) ?>
+                            <?= $e(__('members.member_number_permanent')) ?>
                         </p>
                     </div>
 
+                    <!-- badge-card-number: C00001, released to NULL when member lapses -->
                     <div class="uk-width-1-2">
-                        <p class="uk-text-muted uk-text-small uk-margin-remove-bottom"><?= $e(__('members.member_number')) ?></p>
-                        <p class="uk-margin-remove"><code><?= isset($member['member_number']) ? (int) $member['member_number'] : '—' ?></code></p>
+                        <p class="uk-text-muted uk-text-small uk-margin-remove-bottom">
+                            <?= $e(__('members.card_number_label')) ?>
+                        </p>
+                        <p class="uk-margin-remove">
+                            <?php if (!empty($member['membership_number'])): ?>
+                            <span class="badge-card-number">
+                                <?= $e(format_card_number($member['membership_number'])) ?>
+                            </span>
+                            <?php else: ?>
+                            <span class="uk-text-muted uk-text-small"><?= $e(__('members.no_card_assigned')) ?></span>
+                            <?php endif; ?>
+                        </p>
                         <p class="uk-text-muted uk-margin-remove" style="font-size:0.75rem">
-                            <?= $e(__('members.member_number_permanent')) ?>
+                            <?= $isActive ? $e(__('members.card_number_active')) : $e(__('members.membership_not_active')) ?>
                         </p>
                     </div>
 
@@ -340,7 +367,16 @@ $content = (function () use (
                 <?php foreach ($memberships as $ms): ?>
                 <tr>
                     <td><?= (int) $ms['year'] ?></td>
-                    <td><code><?= $e($member['membership_number'] ?? '—') ?></code></td>
+                    <!-- badge-card-number: source of truth from memberships.membership_number -->
+                    <td>
+                        <?php if (!empty($ms['membership_number'])): ?>
+                        <span class="badge-card-number">
+                            <?= $e(format_card_number($ms['membership_number'])) ?>
+                        </span>
+                        <?php else: ?>
+                        <span class="uk-text-muted">—</span>
+                        <?php endif; ?>
+                    </td>
                     <td><?= $e($ms['category_name'] ?? '—') ?></td>
                     <td>€&nbsp;<?= number_format((float) $ms['fee'], 2, ',', '.') ?></td>
                     <td>

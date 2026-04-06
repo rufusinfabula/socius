@@ -87,7 +87,7 @@ $content = (function () use (
                     <?php foreach ($categories as $cat): ?>
                         <option value="<?= (int) $cat['id'] ?>"
                             <?= (int) $filters['category'] === (int) $cat['id'] ? 'selected' : '' ?>>
-                            <?= $e($cat['nome']) ?>
+                            <?= $e($cat['label']) ?>
                         </option>
                     <?php endforeach; ?>
                 </select>
@@ -109,8 +109,7 @@ $content = (function () use (
         <table class="uk-table uk-table-striped uk-table-hover uk-table-small">
             <thead>
                 <tr>
-                    <th><?= $e(__('members.member_number')) ?></th>
-                    <th><?= $e(__('members.membership_number')) ?></th>
+                    <th><?= $e(__('members.member_number_label')) ?></th>
                     <th><?= $e(__('members.surname')) ?></th>
                     <th><?= $e(__('members.name')) ?></th>
                     <th><?= $e(__('members.email')) ?></th>
@@ -121,8 +120,12 @@ $content = (function () use (
             <tbody>
                 <?php foreach ($members['items'] as $m): ?>
                 <tr>
-                    <td><?= isset($m['member_number']) ? (int) $m['member_number'] : '—' ?></td>
-                    <td><code><?= $e($m['membership_number']) ?></code></td>
+                    <!-- badge-member-number: permanent M00001 identifier (blue) -->
+                    <td>
+                        <span class="badge-member-number">
+                            <?= $e(format_member_number(isset($m['member_number']) ? (int) $m['member_number'] : null)) ?>
+                        </span>
+                    </td>
                     <td><?= $e($m['surname']) ?></td>
                     <td><?= $e($m['name']) ?></td>
                     <td><?= $e($m['email']) ?></td>

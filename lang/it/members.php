@@ -24,8 +24,13 @@ return [
     // Colonne tabella
     // -------------------------------------------------------------------------
     'member_number'              => 'N. Socio',
+    'member_number_label'        => 'N. Socio',
     'member_number_assigned'     => 'Numero socio assegnato: :number',
-    'member_number_permanent'    => 'Il numero socio è permanente e non modificabile.',
+    'member_number_permanent'    => 'Il numero socio (M) è permanente e non modificabile.',
+    'card_number_label'          => 'N. Tessera',
+    'no_card_assigned'           => 'Nessuna tessera assegnata',
+    'card_will_be_assigned'      => 'Verrà assegnata al primo rinnovo',
+    'card_number_active'         => 'Tessera corrente',
     'membership_number'          => 'N. Tessera',
     'name'                 => 'Nome',
     'surname'              => 'Cognome',

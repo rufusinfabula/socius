@@ -24,6 +24,8 @@ return [
     // -------------------------------------------------------------------------
     'social_year'          => 'Anno sociale',
     'membership_number'    => 'N. Tessera',
+    'next_available'       => 'prossimo disponibile',
+    'membership_number_hint' => 'Lascia invariato per usare il numero proposto.',
     'fee'                  => 'Quota',
     'paid_on'              => 'Pagato il',
     'payment_method'       => 'Metodo pagamento',

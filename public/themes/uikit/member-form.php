@@ -163,14 +163,17 @@ $content = (function () use (
                         <?= $e(__('members.box_member')) ?>
                     </h3>
 
-                    <!-- N. Socio + N. Tessera (read-only in edit mode) -->
                     <?php if ($isEdit): ?>
+                    <!-- Edit mode: show both identifiers as read-only badges -->
 
+                    <!-- badge-member-number: permanent M00001 — never changes -->
                     <?php if (!empty($member['member_number'])): ?>
                     <div class="uk-margin">
-                        <label class="uk-form-label"><?= $e(__('members.member_number')) ?></label>
-                        <div class="uk-input" style="background:#f8f8f8;cursor:default;color:#666">
-                            <strong><?= (int) $member['member_number'] ?></strong>
+                        <label class="uk-form-label"><?= $e(__('members.member_number_label')) ?></label>
+                        <div>
+                            <span class="badge-member-number">
+                                <?= $e(format_member_number((int) $member['member_number'])) ?>
+                            </span>
                         </div>
                         <p class="uk-text-small uk-text-muted uk-margin-remove-top" style="font-size:0.8rem">
                             <?= $e(__('members.member_number_permanent')) ?>
@@ -178,20 +181,34 @@ $content = (function () use (
                     </div>
                     <?php endif; ?>
 
-                    <?php if (!empty($member['membership_number'])): ?>
+                    <!-- badge-card-number: C00001 (current active card, NULL if lapsed) -->
                     <div class="uk-margin">
-                        <label class="uk-form-label"><?= $e(__('members.membership_number')) ?></label>
-                        <div class="uk-input" style="background:#f8f8f8;cursor:default;color:#666">
-                            <code><?= $v('membership_number') ?></code>
+                        <label class="uk-form-label"><?= $e(__('members.card_number_label')) ?></label>
+                        <div>
+                            <?php if (!empty($member['membership_number'])): ?>
+                            <span class="badge-card-number">
+                                <?= $e(format_card_number($member['membership_number'])) ?>
+                            </span>
+                            <?php else: ?>
+                            <span class="uk-text-muted uk-text-small">
+                                <?= $e(__('members.card_will_be_assigned')) ?>
+                            </span>
+                            <?php endif; ?>
                         </div>
                     </div>
-                    <?php endif; ?>
 
                     <?php else: ?>
+                    <!-- New mode: both identifiers will be assigned automatically -->
                     <div class="uk-margin">
-                        <label class="uk-form-label"><?= $e(__('members.membership_number')) ?></label>
+                        <label class="uk-form-label"><?= $e(__('members.member_number_label')) ?></label>
                         <p class="uk-text-muted uk-text-small uk-margin-remove">
-                            Assegnato automaticamente
+                            <?= $e(__('members.member_number_permanent')) ?> — assegnato automaticamente
+                        </p>
+                    </div>
+                    <div class="uk-margin">
+                        <label class="uk-form-label"><?= $e(__('members.card_number_label')) ?></label>
+                        <p class="uk-text-muted uk-text-small uk-margin-remove">
+                            <?= $e(__('members.card_will_be_assigned')) ?>
                         </p>
                     </div>
                     <?php endif; ?>

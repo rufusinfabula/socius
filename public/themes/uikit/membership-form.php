@@ -98,8 +98,15 @@ $content = (function () use (
                             <a href="member.php?id=<?= (int) $v('member_id') ?>">
                                 <?= $e(($ms['member_surname'] ?? '') . ' ' . ($ms['member_name'] ?? '')) ?>
                             </a>
-                            <span class="uk-text-muted uk-text-small uk-margin-small-left">
-                                <code><?= $e($ms['membership_number'] ?? '') ?></code>
+                            &nbsp;
+                            <!-- badge-member-number: permanent M00001 -->
+                            <span class="badge-member-number">
+                                <?= $e(format_member_number(isset($ms['member_number']) ? (int) $ms['member_number'] : null)) ?>
+                            </span>
+                            &nbsp;
+                            <!-- badge-card-number: current card C00001 -->
+                            <span class="badge-card-number">
+                                <?= $e(format_card_number($ms['membership_number'] ?? null)) ?>
                             </span>
                         </p>
                     </div>
@@ -108,8 +115,10 @@ $content = (function () use (
                         <label class="uk-form-label"><?= $e(__('memberships.box_member')) ?></label>
                         <p class="uk-text-bold uk-margin-remove">
                             <?= $e(($preMember['surname'] ?? '') . ' ' . ($preMember['name'] ?? '')) ?>
-                            <span class="uk-text-muted uk-text-small uk-margin-small-left">
-                                <code><?= $e($preMember['membership_number'] ?? '') ?></code>
+                            &nbsp;
+                            <!-- badge-member-number: permanent M00001 -->
+                            <span class="badge-member-number">
+                                <?= $e(format_member_number(isset($preMember['member_number']) ? (int) $preMember['member_number'] : null)) ?>
                             </span>
                         </p>
                         <input type="hidden" name="member_id" value="<?= (int) $preMember['id'] ?>">
@@ -159,12 +168,21 @@ $content = (function () use (
                         <label class="uk-form-label" for="membership_number">
                             <?= $e(__('memberships.membership_number')) ?>
                         </label>
+                        <!-- badge-card-number: proposed next card number (source of truth: memberships.membership_number) -->
+                        <div class="uk-margin-small-bottom">
+                            <span class="badge-card-number" style="font-size:1em">
+                                <?= $e(format_card_number($v('membership_number', $nextNumber) ?: $nextNumber)) ?>
+                            </span>
+                            <span class="uk-text-small uk-text-muted uk-margin-small-left">
+                                (<?= $e(__('memberships.next_available')) ?>)
+                            </span>
+                        </div>
                         <input type="text" id="membership_number" name="membership_number"
                                class="uk-input"
                                value="<?= $e($v('membership_number', $nextNumber)) ?>"
                                placeholder="<?= $e($nextNumber) ?>">
                         <p class="uk-text-small uk-text-muted uk-margin-small-top">
-                            <?= $e(__('members.member_number_permanent')) ?>
+                            <?= $e(__('memberships.membership_number_hint')) ?>
                         </p>
                     </div>
                     <?php endif; ?>
@@ -335,7 +353,7 @@ $content = (function () use (
                         <div class="uk-margin">
                             <label class="uk-form-label uk-text-small">
                                 <?= $e(__('memberships.dangerous_reserve_confirm_label')) ?>:
-                                <code><?= $e($ms['membership_number'] ?? '') ?></code>
+                                <span class="badge-card-number"><?= $e(format_card_number($ms['membership_number'] ?? null)) ?></span>
                             </label>
                             <input type="text" name="confirm_number" class="uk-input uk-form-small"
                                    placeholder="<?= $e($ms['membership_number'] ?? '') ?>"

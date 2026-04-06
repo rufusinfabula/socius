@@ -11,6 +11,52 @@
         .uk-sidebar .uk-nav-default > li > a { padding: 8px 20px; font-size: 0.9rem; }
         .uk-sidebar .uk-nav-default > li.uk-active > a { color: #1e87f0; font-weight: 600; }
         .main-content { padding: 30px; }
+
+        /*
+         * Socius — Global identifier badges
+         *
+         * Two CSS classes used consistently across ALL templates to display
+         * member and card numbers. Never render these numbers as plain text.
+         *
+         * .badge-member-number  →  permanent member identifier (blue)
+         *   Format: M00001 — assigned once at registration, never changes.
+         *   Source: members.member_number (integer, formatted by format_member_number())
+         *
+         * .badge-card-number  →  annual card identifier (green)
+         *   Format: C00001 — released (NULL) when member lapses.
+         *   Source of truth: memberships.membership_number
+         *   Denormalized copy: members.membership_number (synced automatically)
+         *
+         * Usage in templates:
+         *   <span class="badge-member-number">
+         *     <?= $e(format_member_number($member['member_number'])) ?>
+         *   </span>
+         *   <span class="badge-card-number">
+         *     <?= $e(format_card_number($member['membership_number'])) ?>
+         *   </span>
+         */
+        .badge-member-number {
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.85em;
+            font-weight: 600;
+            background-color: #E8F0FE;
+            color: #1A3A6B;
+            padding: 2px 7px;
+            border-radius: 4px;
+            white-space: nowrap;
+            letter-spacing: 0.03em;
+        }
+        .badge-card-number {
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.85em;
+            font-weight: 600;
+            background-color: #E6F4EA;
+            color: #1B5E2F;
+            padding: 2px 7px;
+            border-radius: 4px;
+            white-space: nowrap;
+            letter-spacing: 0.03em;
+        }
     </style>
 </head>
 <body>

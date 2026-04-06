@@ -165,23 +165,51 @@ class Member extends BaseModel
 
     /**
      * Insert a new member row.
-     * Assigns membership_number automatically via getNextMembershipNumber().
+     *
+     * IMPORTANT: membership_number is intentionally set to NULL at creation
+     * time. A card number is only assigned when the first membership record
+     * is created in the memberships table. This ensures the card number is
+     * always linked to an actual membership record and never exists in isolation.
+     *
+     * member_number is a permanent sequential integer assigned via the
+     * next_member_number() global helper (reads and increments members.next_number
+     * in settings).
      *
      * @param  array<string, mixed> $data  Member fields (without membership_number)
      * @return int  New member ID
      */
     public static function create(array $data): int
     {
-        $data['membership_number'] = self::getNextMembershipNumber();
-        $data['member_number']     = self::getNextMemberNumber();
-        $id = self::db()->insert('members', $data);
+        // membership_number is NULL at creation — assigned with first membership
+        unset($data['membership_number']);
 
-        // Advance the membership number counter in settings
-        self::db()->query(
-            "UPDATE settings SET `value` = CAST(`value` AS UNSIGNED) + 1 WHERE `key` = 'members.next_number'"
-        );
+        // Assign permanent member number from settings counter
+        // next_member_number() reads members.next_number and increments it
+        $data['member_number'] = next_member_number();
 
-        return (int) $id;
+        return (int) self::db()->insert('members', $data);
+    }
+
+    /**
+     * Update the denormalized card number on the member record.
+     *
+     * This method should only be called by Membership model operations
+     * (create, update, releaseCardNumber). Direct calls from other contexts
+     * are strongly discouraged — always go through Membership.
+     *
+     * Pass NULL when the member lapses and the card number should be released
+     * (it then becomes available for reassignment).
+     *
+     * @param int         $memberId
+     * @param string|null $cardNumber NULL when member lapses
+     */
+    public static function updateCardNumber(int $memberId, ?string $cardNumber): bool
+    {
+        return self::db()->update(
+            'members',
+            ['membership_number' => $cardNumber],
+            ['id' => $memberId]
+        ) >= 0;
     }
 
     /**

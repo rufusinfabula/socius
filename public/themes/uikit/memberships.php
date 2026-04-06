@@ -112,15 +112,29 @@ $content = (function () use (
             <tbody>
                 <?php foreach ($items as $ms): ?>
                 <tr>
-                    <td><code><?= $e($ms['member_number'] ?? '—') ?></code></td>
+                    <!-- badge-member-number: permanent M00001 (blue) -->
+                    <td>
+                        <span class="badge-member-number">
+                            <?= $e(format_member_number(isset($ms['member_number']) ? (int) $ms['member_number'] : null)) ?>
+                        </span>
+                    </td>
                     <td>
                         <a href="member.php?id=<?= (int) $ms['member_id'] ?>">
-                            <?= $e($ms['surname'] . ' ' . $ms['member_name']) ?>
+                            <?= $e(($ms['member_surname'] ?? '') . ' ' . ($ms['member_name'] ?? '')) ?>
                         </a>
                     </td>
                     <td><?= $e($ms['category_name'] ?? '—') ?></td>
                     <td><?= (int) $ms['year'] ?></td>
-                    <td><code><?= $e($ms['membership_number'] ?? '—') ?></code></td>
+                    <!-- badge-card-number: C00001, source of truth from memberships.membership_number -->
+                    <td>
+                        <?php if (!empty($ms['membership_number'])): ?>
+                        <span class="badge-card-number">
+                            <?= $e(format_card_number($ms['membership_number'])) ?>
+                        </span>
+                        <?php else: ?>
+                        <span class="uk-text-muted">—</span>
+                        <?php endif; ?>
+                    </td>
                     <td>€&nbsp;<?= number_format((float) $ms['fee'], 2, ',', '.') ?></td>
                     <td>
                         <?php

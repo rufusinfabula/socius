@@ -179,9 +179,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         flash_set('error', 'Numero tessera non valido.');
                         redirect('membership-edit.php?id=' . $id);
                     }
+                    // membership_number on ms row = source of truth for this record's card number
                     $oldNumber = (string) ($membership['membership_number'] ?? '');
                     $memberId  = (int) ($membership['member_id'] ?? 0);
-                    $db->update('members', ['membership_number' => $newNumber], ['id' => $memberId]);
+                    // Update source of truth on the membership record
+                    $db->update('memberships', ['membership_number' => $newNumber], ['id' => $id]);
+                    // Update denormalized copy on members via model helper
+                    \Socius\Models\Member::updateCardNumber($memberId, $newNumber);
                     Membership::audit($userId, 'membership.dangerous.change_number', $id,
                         ['membership_number' => $oldNumber],
                         ['membership_number' => $newNumber, 'motivation' => $motivation],
@@ -273,6 +277,7 @@ theme('membership-form', [
     'members'      => [],
     'categories'   => $categories,
     'categoryFees' => $categoryFees,
+    // membership_number from the ms.* row is the source of truth for this card
     'nextNumber'   => (string) ($membership['membership_number'] ?? ''),
     'currentYear'  => (int) date('Y'),
     'error'        => $error,

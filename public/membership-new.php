@@ -50,13 +50,17 @@ try {
     );
 } catch (\Throwable) {}
 
-// Next available number
+// Next available card number (C00001 format).
+// If the member already has a card number, pre-fill with it.
+// Card numbers come from memberships.membership_number (source of truth).
 $nextNumber = '';
 try {
     if ($preMember && !empty($preMember['membership_number'])) {
+        // Member already has a card number — show it, admin can keep or change
         $nextNumber = $preMember['membership_number'];
     } else {
-        $nextNumber = Membership::getNextAvailableNumber();
+        // No card yet — generate the next available
+        $nextNumber = next_card_number();
     }
 } catch (\Throwable) {}
 
@@ -72,6 +76,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $categoryId = (int) ($_POST['category_id'] ?? 0);
     $fee        = (float) str_replace(',', '.', (string) ($_POST['fee'] ?? '0'));
     $status     = trim((string) ($_POST['status'] ?? 'pending'));
+    // Card number: admin may supply one; if empty, auto-generate at save time.
+    // Stored in memberships.membership_number (source of truth).
     $cardNumber = trim((string) ($_POST['membership_number'] ?? ''));
     $method     = trim((string) ($_POST['payment_method'] ?? 'none'));
     $paidOn     = trim((string) ($_POST['paid_on'] ?? ''));
@@ -152,9 +158,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $finalStatus = 'waived';
                     }
 
-                    // Create membership record
+                    // Resolve card number: use submitted value or auto-generate.
+                    // Stored in memberships.membership_number (source of truth).
+                    $assignedCard = $cardNumber !== '' ? $cardNumber : next_card_number();
+
+                    // Create membership record (card number stored here as source of truth)
                     $membershipId = (int) $db->insert('memberships', [
                         'member_id'          => $memberId,
+                        'membership_number'  => $assignedCard,
                         'category_id'        => $categoryId,
                         'year'               => $year,
                         'fee'                => number_format($fee, 2, '.', ''),
@@ -199,19 +210,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         ]);
                     }
 
-                    // Assign card number to member if needed
-                    $updateMember = [];
-                    if ($cardNumber !== '' && ($member['membership_number'] === null || $member['membership_number'] === '')) {
-                        $updateMember['membership_number'] = $cardNumber;
-                    }
+                    // Sync card number to members.membership_number (denormalized copy).
+                    // Always update — membership creation always (re-)assigns the card.
+                    $db->update('members', ['membership_number' => $assignedCard], ['id' => $memberId]);
 
                     // Update member status to active if paid or waived
                     if (in_array($finalStatus, ['paid', 'waived'], true)) {
-                        $updateMember['status'] = 'active';
-                    }
-
-                    if (!empty($updateMember)) {
-                        $db->update('members', $updateMember, ['id' => $memberId]);
+                        $db->update('members', ['status' => 'active'], ['id' => $memberId]);
                     }
 
                     // Audit log
@@ -222,9 +227,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         'entity_id'   => $membershipId,
                         'old_values'  => null,
                         'new_values'  => json_encode([
-                            'member_id' => $memberId, 'year' => $year,
-                            'status'    => $finalStatus, 'fee' => $fee,
-                            'method'    => $method,
+                            'member_id'        => $memberId,
+                            'year'             => $year,
+                            'status'           => $finalStatus,
+                            'fee'              => $fee,
+                            'method'           => $method,
+                            'membership_number'=> $assignedCard,
                         ]),
                         'ip_address'  => client_ip(),
                         'user_agent'  => substr($_SERVER['HTTP_USER_AGENT'] ?? '', 0, 512),

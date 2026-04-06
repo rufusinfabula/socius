@@ -279,3 +279,143 @@ function format_date_iso(string $date): string
         return '';
     }
 }
+
+// =============================================================================
+// Member number and card number helpers
+//
+// MEMBER NUMBER vs CARD NUMBER
+//
+// Member number (members.member_number):
+//   - Permanent sequential integer assigned at first registration
+//   - Never changes, even if the member lapses and rejoins years later
+//   - Format: M + 5 digits → M00001
+//   - Prefix configurable in settings: members.number_prefix (default 'M')
+//   - Displayed with CSS class: badge-member-number (blue)
+//
+// Card number (memberships.membership_number  ←  SOURCE OF TRUTH):
+//   - Alphanumeric code assigned when a membership record is created
+//   - Stable as long as the member renews regularly
+//   - Released (set to NULL) if member reaches status 'lapsed'
+//   - Format: C + 5 digits → C00001
+//   - Prefix configurable in settings: members.card_prefix (default 'C')
+//   - Displayed with CSS class: badge-card-number (green)
+//
+// members.membership_number is a denormalized copy of the current active card
+// number. It is updated automatically by the system when a membership is
+// created or updated. It must NEVER be modified directly — only through
+// Membership model operations.
+// =============================================================================
+
+/**
+ * Format a member number for display.
+ *
+ * Takes the raw integer member_number from the database
+ * and returns the formatted display string.
+ *
+ * Examples:
+ *   format_member_number(1)    → 'M00001'
+ *   format_member_number(42)   → 'M00042'
+ *   format_member_number(null) → '—'
+ *
+ * @param int|null $number Raw member_number from members table
+ * @return string Formatted member number with prefix
+ */
+function format_member_number(int|null $number): string
+{
+    if ($number === null || $number <= 0) {
+        return '—';
+    }
+    $prefix = (string) \Socius\Models\Setting::get('members.number_prefix', 'M');
+    $digits = (int) \Socius\Models\Setting::get('members.number_digits', 5);
+    return $prefix . str_pad((string) $number, $digits, '0', STR_PAD_LEFT);
+}
+
+/**
+ * Format a card number for display.
+ *
+ * The card number is already stored in the correct format (e.g. C00001)
+ * in both members.membership_number and memberships.membership_number.
+ *
+ * This function ensures consistent output — returns '—' for NULL or empty.
+ *
+ * Examples:
+ *   format_card_number('C00001') → 'C00001'
+ *   format_card_number(null)     → '—'
+ *   format_card_number('')       → '—'
+ *
+ * @param string|null $number Card number from memberships or members table
+ * @return string Formatted card number or '—'
+ */
+function format_card_number(string|null $number): string
+{
+    if ($number === null || $number === '') {
+        return '—';
+    }
+    return $number;
+}
+
+/**
+ * Consume the next available member number from the settings counter.
+ *
+ * Reads members.next_number from settings, returns it, then increments
+ * the counter. This function has a side effect — call it only when
+ * actually creating a new member.
+ *
+ * @return int Raw integer to store in members.member_number
+ */
+function next_member_number(): int
+{
+    $next = (int) \Socius\Models\Setting::get('members.next_number', 1);
+    \Socius\Models\Setting::set('members.next_number', (string) ($next + 1));
+    return $next;
+}
+
+/**
+ * Generate the next available card number string.
+ *
+ * Finds the highest numeric value currently in use across:
+ *   - members.membership_number (denormalized copy)
+ *   - memberships.membership_number (source of truth)
+ *   - reserved_member_numbers (numbers that must not be reused)
+ *
+ * Returns the next formatted card number. Does NOT persist anything —
+ * card numbers are derived from the current DB maximum each time.
+ *
+ * @return string Next available card number (e.g. 'C00042')
+ */
+function next_card_number(): string
+{
+    $db     = \Socius\Core\Database::getInstance();
+    $prefix = (string) \Socius\Models\Setting::get('members.card_prefix', 'C');
+    $digits = (int) \Socius\Models\Setting::get('members.number_digits', 5);
+    $pLen   = strlen($prefix);
+    $pos    = $pLen + 1; // SUBSTRING start position (1-based)
+
+    $rgx = '^[A-Z][0-9]+$';
+
+    $maxMembers = (int) ($db->fetch(
+        "SELECT COALESCE(MAX(CAST(SUBSTRING(membership_number, ?) AS UNSIGNED)), 0) AS m
+           FROM members
+          WHERE membership_number IS NOT NULL
+            AND membership_number REGEXP ?",
+        [$pos, $rgx]
+    )['m'] ?? 0);
+
+    $maxMemberships = (int) ($db->fetch(
+        "SELECT COALESCE(MAX(CAST(SUBSTRING(membership_number, ?) AS UNSIGNED)), 0) AS m
+           FROM memberships
+          WHERE membership_number IS NOT NULL
+            AND membership_number REGEXP ?",
+        [$pos, $rgx]
+    )['m'] ?? 0);
+
+    $maxReserved = (int) ($db->fetch(
+        "SELECT COALESCE(MAX(CAST(SUBSTRING(membership_number, ?) AS UNSIGNED)), 0) AS m
+           FROM reserved_member_numbers
+          WHERE membership_number REGEXP ?",
+        [$pos, $rgx]
+    )['m'] ?? 0);
+
+    $next = max($maxMembers, $maxMemberships, $maxReserved) + 1;
+    return $prefix . str_pad((string) $next, $digits, '0', STR_PAD_LEFT);
+}

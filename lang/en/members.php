@@ -24,8 +24,13 @@ return [
     // Table columns
     // -------------------------------------------------------------------------
     'member_number'              => 'Member No.',
+    'member_number_label'        => 'Member No.',
     'member_number_assigned'     => 'Member number assigned: :number',
-    'member_number_permanent'    => 'The member number is permanent and cannot be changed.',
+    'member_number_permanent'    => 'The member number (M) is permanent and cannot be changed.',
+    'card_number_label'          => 'Card No.',
+    'no_card_assigned'           => 'No card assigned',
+    'card_will_be_assigned'      => 'Will be assigned on first renewal',
+    'card_number_active'         => 'Current card',
     'membership_number'          => 'Card No.',
     'name'                 => 'First name',
     'surname'              => 'Last name',

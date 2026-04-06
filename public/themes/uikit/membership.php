@@ -75,6 +75,13 @@ $content = (function () use (
                     <span uk-icon="icon: tag; ratio: 1.1" class="uk-margin-small-right"></span>
                     <?= $e(__('memberships.membership')) ?>
                     &nbsp;
+                    <!-- badge-card-number prominent: source of truth from memberships.membership_number -->
+                    <?php if (!empty($ms['membership_number'])): ?>
+                    <span class="badge-card-number" style="font-size:1em">
+                        <?= $e(format_card_number($ms['membership_number'])) ?>
+                    </span>
+                    &nbsp;
+                    <?php endif; ?>
                     <?php
                     $ukSuffix = $statusUkLabel[$st] ?? '';
                     $stStyle  = $statusStyle[$st] ?? '';
@@ -92,9 +99,18 @@ $content = (function () use (
                         <p class="uk-margin-remove-top"><?= (int) $ms['year'] ?></p>
                     </div>
 
+                    <!-- Card number field in grid (badge-card-number) -->
                     <div class="uk-width-1-2@s">
                         <p class="uk-text-muted uk-text-small uk-margin-remove-bottom"><?= $e(__('memberships.membership_number')) ?></p>
-                        <p class="uk-margin-remove-top"><code><?= $e($ms['membership_number'] ?? '—') ?></code></p>
+                        <p class="uk-margin-remove-top">
+                            <?php if (!empty($ms['membership_number'])): ?>
+                            <span class="badge-card-number">
+                                <?= $e(format_card_number($ms['membership_number'])) ?>
+                            </span>
+                            <?php else: ?>
+                            <span class="uk-text-muted">—</span>
+                            <?php endif; ?>
+                        </p>
                     </div>
 
                     <div class="uk-width-1-2@s">
@@ -149,17 +165,18 @@ $content = (function () use (
                     <?= $e(__('memberships.box_member')) ?>
                 </h3>
 
-                <div class="uk-margin">
-                    <p class="uk-text-muted uk-text-small uk-margin-remove-bottom"><?= $e(__('members.member_number')) ?></p>
-                    <p class="uk-margin-remove-top"><code><?= $e($ms['member_number'] ?? '—') ?></code></p>
-                </div>
-
+                <!-- Name + badge-member-number inline: "Fabio Ranfi  [M00001]" -->
                 <div class="uk-margin">
                     <p class="uk-text-muted uk-text-small uk-margin-remove-bottom"><?= $e(__('members.full_name')) ?></p>
                     <p class="uk-margin-remove-top">
                         <a href="member.php?id=<?= (int) $ms['member_id'] ?>">
                             <?= $e(($ms['member_surname'] ?? '') . ' ' . ($ms['member_name'] ?? '')) ?>
                         </a>
+                        &nbsp;
+                        <!-- badge-member-number: permanent M00001 identifier (blue) -->
+                        <span class="badge-member-number">
+                            <?= $e(format_member_number(isset($ms['member_number']) ? (int) $ms['member_number'] : null)) ?>
+                        </span>
                     </p>
                 </div>
 

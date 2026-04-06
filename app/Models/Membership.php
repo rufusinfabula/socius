@@ -14,7 +14,32 @@ declare(strict_types=1);
 namespace Socius\Models;
 
 /**
- * Annual membership (tessera) linked to a member.
+ * Membership model — manages annual membership records.
+ *
+ * MEMBER NUMBER vs CARD NUMBER
+ *
+ * Member number (members.member_number):
+ *   - Permanent sequential integer assigned at first registration
+ *   - Never changes, even if the member lapses and rejoins years later
+ *   - Format: M + 5 digits → M00001
+ *   - Displayed with CSS class: badge-member-number (blue)
+ *
+ * Card number (memberships.membership_number  ←  SOURCE OF TRUTH):
+ *   - Alphanumeric code assigned when a membership record is created
+ *   - Stored per-membership row so historical records keep their number
+ *   - Format: C + 5 digits → C00001
+ *   - Displayed with CSS class: badge-card-number (green)
+ *
+ * members.membership_number is a DENORMALIZED COPY of the current active
+ * card number. It is updated automatically via Member::updateCardNumber().
+ * It must NEVER be modified directly — only through Membership operations.
+ *
+ * Card number lifecycle:
+ *   1. Assigned at membership creation via next_card_number()
+ *   2. Stored in memberships.membership_number (source of truth)
+ *   3. Copied to members.membership_number via Member::updateCardNumber()
+ *   4. On member lapse: releaseCardNumber() sets members.membership_number = NULL
+ *   5. Historical membership records retain their card number permanently
  */
 class Membership extends BaseModel
 {
@@ -26,6 +51,9 @@ class Membership extends BaseModel
      * Return a paginated list of memberships with optional filters.
      *
      * Supported filter keys: year, status, category_id, member_id
+     *
+     * NOTE: queries alias m.membership_number as member_card_number to avoid
+     * collision with ms.membership_number (the source of truth for card numbers).
      *
      * @return array{items: list<array<string,mixed>>, total: int, page: int, per_page: int, pages: int}
      */
@@ -66,10 +94,13 @@ class Membership extends BaseModel
 
         $offset = ($page - 1) * $perPage;
         $items  = self::db()->fetchAll(
+            // ms.* includes ms.membership_number (source of truth for this card).
+            // m.membership_number (denormalized copy) is aliased to avoid collision.
             "SELECT ms.*, mc.label AS category_name,
                     m.name AS member_name, m.surname AS member_surname,
                     m.email AS member_email, m.status AS member_status,
-                    m.membership_number, m.member_number
+                    m.membership_number AS member_card_number,
+                    m.member_number
                FROM memberships ms
                JOIN members m ON m.id = ms.member_id
                LEFT JOIN membership_categories mc ON mc.id = ms.category_id
@@ -91,6 +122,9 @@ class Membership extends BaseModel
     /**
      * Find a membership by primary key, with member and category data.
      *
+     * ms.membership_number is the source of truth for the card number.
+     * m.membership_number (denormalized copy) is aliased as member_card_number.
+     *
      * @return array<string, mixed>|null
      */
     public static function findById(int $id): ?array
@@ -99,7 +133,8 @@ class Membership extends BaseModel
             'SELECT ms.*, mc.label AS category_name, mc.is_exempt_from_renewal,
                     m.name AS member_name, m.surname AS member_surname,
                     m.email AS member_email, m.status AS member_status,
-                    m.membership_number, m.member_number
+                    m.membership_number AS member_card_number,
+                    m.member_number
                FROM memberships ms
                JOIN members m ON m.id = ms.member_id
                LEFT JOIN membership_categories mc ON mc.id = ms.category_id
@@ -112,6 +147,9 @@ class Membership extends BaseModel
 
     /**
      * Return all memberships for a member, newest first.
+     *
+     * ms.membership_number is the card number for each historical record
+     * (source of truth — remains even after card is released on lapse).
      *
      * @return list<array<string, mixed>>
      */
@@ -165,66 +203,70 @@ class Membership extends BaseModel
     /**
      * Insert a new membership row.
      *
+     * If $data does not include 'membership_number', one is generated
+     * automatically via next_card_number(). After insertion, the denormalized
+     * copy on members.membership_number is updated via Member::updateCardNumber().
+     *
      * @param array<string, mixed> $data
      * @return int  New membership ID
      */
     public static function create(array $data): int
     {
-        return (int) self::db()->insert('memberships', $data);
+        // Auto-assign card number if not provided
+        if (empty($data['membership_number'])) {
+            $data['membership_number'] = next_card_number();
+        }
+
+        $id       = (int) self::db()->insert('memberships', $data);
+        $memberId = (int) ($data['member_id'] ?? 0);
+
+        // Update denormalized copy on the member record
+        if ($memberId > 0) {
+            Member::updateCardNumber($memberId, (string) $data['membership_number']);
+        }
+
+        return $id;
     }
 
     /**
      * Update membership fields.
      *
+     * If the record belongs to the current year and membership_number is being
+     * changed, syncs the denormalized copy on members via Member::updateCardNumber().
+     *
      * @param array<string, mixed> $data
      */
     public static function update(int $id, array $data): bool
     {
-        return self::db()->update('memberships', $data, ['id' => $id]) >= 0;
+        $result = self::db()->update('memberships', $data, ['id' => $id]) >= 0;
+
+        // Sync card number on member if it changed for a current-year record
+        if (isset($data['membership_number'])) {
+            $ms = self::findById($id);
+            if ($ms && (int) $ms['year'] === (int) date('Y')) {
+                Member::updateCardNumber((int) $ms['member_id'], $data['membership_number'] ?: null);
+            }
+        }
+
+        return $result;
     }
 
     // =========================================================================
-    // Membership number helpers
+    // Card number lifecycle
     // =========================================================================
 
     /**
-     * Return the next available membership number string (SOC0001 format).
+     * Release the card number when a member lapses.
      *
-     * Reads prefix and padding from settings.
-     * Excludes numbers already assigned to members AND numbers in reserved_member_numbers.
+     * Sets members.membership_number to NULL — the number becomes available
+     * for reassignment to new members. Historical membership records in the
+     * memberships table retain their card number permanently.
+     *
+     * Called automatically by the renewal/lapse process.
      */
-    public static function getNextAvailableNumber(): string
+    public static function releaseCardNumber(int $memberId): bool
     {
-        $db = self::db();
-
-        $prefix  = (string) ($db->fetch(
-            "SELECT `value` FROM settings WHERE `key` = 'members.number_prefix' LIMIT 1"
-        )['value'] ?? 'SOC');
-
-        $padding = (int) ($db->fetch(
-            "SELECT `value` FROM settings WHERE `key` = 'members.number_padding' LIMIT 1"
-        )['value'] ?? 4);
-
-        $prefixLen = strlen($prefix);
-
-        // Max numeric part from active members
-        $maxMembers = (int) ($db->fetch(
-            "SELECT COALESCE(MAX(CAST(SUBSTRING(membership_number, ?) AS UNSIGNED)), 0) AS m
-               FROM members",
-            [$prefixLen + 1]
-        )['m'] ?? 0);
-
-        // Max numeric part from reserved numbers with same prefix
-        $maxReserved = (int) ($db->fetch(
-            "SELECT COALESCE(MAX(CAST(SUBSTRING(membership_number, ?) AS UNSIGNED)), 0) AS m
-               FROM reserved_member_numbers
-              WHERE membership_number LIKE ?",
-            [$prefixLen + 1, $prefix . '%']
-        )['m'] ?? 0);
-
-        $next = max($maxMembers, $maxReserved) + 1;
-
-        return $prefix . str_pad((string) $next, $padding, '0', STR_PAD_LEFT);
+        return Member::updateCardNumber($memberId, null);
     }
 
     // =========================================================================

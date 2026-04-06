@@ -24,6 +24,8 @@ return [
     // -------------------------------------------------------------------------
     'social_year'          => 'Social year',
     'membership_number'    => 'Card No.',
+    'next_available'       => 'next available',
+    'membership_number_hint' => 'Leave unchanged to use the proposed number.',
     'fee'                  => 'Fee',
     'paid_on'              => 'Paid on',
     'payment_method'       => 'Payment method',
