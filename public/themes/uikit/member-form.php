@@ -17,9 +17,12 @@ $statusOptions = [
     'deceased'    => __('members.status_deceased'),
 ];
 
+$isSuperAdmin = $isSuperAdmin ?? false;
+
 $content = (function () use (
     $member, $categories, $boardRoles, $currentBoardRole, $currentUser,
-    $isEdit, $heading, $action, $error, $errorDebug, $e, $v, $statusOptions
+    $isEdit, $heading, $action, $error, $errorDebug, $isSuperAdmin,
+    $e, $v, $statusOptions
 ): string {
     ob_start();
     $isStaff = (int) ($currentUser['role_id'] ?? 4) <= 3;
@@ -404,6 +407,80 @@ $content = (function () use (
         </div>
 
     </form>
+
+    <?php if ($isEdit && $isSuperAdmin): ?>
+    <!-- =====================================================================
+         ZONA PERICOLOSA — solo super_admin, solo in edit mode
+         ===================================================================== -->
+    <div class="uk-card uk-card-body uk-border-rounded uk-margin-top"
+         style="border: 2px solid #e74c3c; background:#fff8f8">
+        <h3 class="uk-card-title" style="color:#c0392b">
+            <span uk-icon="icon: warning; ratio: 1.1" class="uk-margin-small-right"></span>
+            <?= $e(__('members.emergency_box_title')) ?>
+        </h3>
+        <p class="uk-text-small uk-text-muted"><?= $e(__('members.emergency_box_desc')) ?></p>
+
+        <!-- Op: Cambia numero socio -->
+        <div class="uk-card uk-card-default uk-card-body uk-border-rounded uk-margin-top"
+             style="border: 1px solid #e74c3c">
+            <h4 style="color:#e74c3c"><?= $e(__('members.dangerous_change_member_number')) ?></h4>
+            <p class="uk-text-small uk-text-muted">
+                <?= $e(__('members.dangerous_change_member_number_desc')) ?>
+            </p>
+            <form method="post"
+                  action="member-edit.php?id=<?= (int) ($member['id'] ?? 0) ?>"
+                  onsubmit="return confirm('Confermi questa operazione?')">
+                <?= csrf_field() ?>
+                <input type="hidden" name="_action" value="dangerous">
+                <input type="hidden" name="operation" value="change_member_number">
+
+                <div class="uk-margin">
+                    <label class="uk-form-label">
+                        <?= $e(__('members.dangerous_new_member_number')) ?>
+                    </label>
+                    <div style="display:flex; align-items:center; gap:8px">
+                        <span class="badge-member-number" style="font-size:1em; padding:4px 10px">
+                            <?= htmlspecialchars(
+                                (string) \Socius\Models\Setting::get('members.number_prefix', 'M'),
+                                ENT_QUOTES, 'UTF-8'
+                            ) ?>
+                        </span>
+                        <input type="number"
+                               name="new_member_number"
+                               class="uk-input"
+                               style="width:130px"
+                               min="1"
+                               placeholder="00001"
+                               required>
+                    </div>
+                    <p class="uk-text-small uk-text-muted uk-margin-small-top">
+                        <?= $e(__('members.dangerous_current_number')) ?>:
+                        <span class="badge-member-number">
+                            <?= $e(format_member_number(isset($member['member_number']) ? (int) $member['member_number'] : null)) ?>
+                        </span>
+                    </p>
+                </div>
+
+                <div class="uk-margin">
+                    <label class="uk-form-label">
+                        <?= $e(__('members.dangerous_motivation')) ?> *
+                    </label>
+                    <textarea name="motivation"
+                              class="uk-textarea"
+                              rows="2"
+                              minlength="10"
+                              required
+                              placeholder="Motivazione obbligatoria (min 10 caratteri)…"></textarea>
+                </div>
+
+                <button type="submit" class="uk-button uk-button-danger uk-button-small">
+                    <?= $e(__('members.dangerous_change_member_number')) ?>
+                </button>
+            </form>
+        </div>
+
+    </div>
+    <?php endif; ?>
 
     <script>
     (function () {

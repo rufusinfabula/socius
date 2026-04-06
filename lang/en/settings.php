@@ -134,12 +134,22 @@ return [
     // -------------------------------------------------------------------------
     // Member number
     // -------------------------------------------------------------------------
-    'number_start'           => 'Starting number',
-    'number_current_max'     => 'Last assigned number',
-    'number_reset'           => 'Reset counter',
-    'number_reset_desc'      => 'Set the progressive number for the next assignment. The new value must be higher than the last assigned number.',
-    'number_reset_warn'      => 'The new value must be higher than the last assigned number.',
-    'number_reset_confirm'   => 'Are you sure you want to reset the counter?',
+    'number_start'              => 'Installation starting number',
+    'number_start_desc'         => 'This value is used only when there are no members in the system yet. After the first member, the system always uses MAX+1 automatically.',
+    'number_start_hint'         => 'Used only for the very first member created.',
+    'number_start_inactive'     => 'Not applicable — members already exist. The next number is calculated automatically.',
+    'number_start_save'         => 'Save starting number',
+    'number_start_invalid'      => 'The starting number must be at least 1.',
+    'number_start_collision'    => 'A member with number :number already exists.',
+    'number_start_below_max'    => 'Saved. New members will still receive :max + 1 (this value is only used when no members exist yet).',
+    'number_stat_count'         => 'Registered members',
+    'number_stat_last'          => 'Last assigned',
+    'number_stat_next'          => 'Next',
+    'number_current_max'        => 'Last assigned number',
+    'number_reset'              => 'Reset counter',
+    'number_reset_desc'         => 'Set the progressive number for the next assignment.',
+    'number_reset_warn'         => 'The new value must be higher than the last assigned number.',
+    'number_reset_confirm'      => 'Are you sure you want to reset the counter?',
 
     // -------------------------------------------------------------------------
     // Common

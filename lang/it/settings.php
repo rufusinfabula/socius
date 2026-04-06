@@ -134,12 +134,22 @@ return [
     // -------------------------------------------------------------------------
     // Numero socio
     // -------------------------------------------------------------------------
-    'number_start'           => 'Numero iniziale',
-    'number_current_max'     => 'Ultimo numero assegnato',
-    'number_reset'           => 'Reimposta contatore',
-    'number_reset_desc'      => 'Imposta il numero progressivo da cui partirà la prossima assegnazione. Il nuovo valore deve essere superiore all\'ultimo numero assegnato.',
-    'number_reset_warn'      => 'Il nuovo valore deve essere superiore all\'ultimo numero assegnato.',
-    'number_reset_confirm'   => 'Sei sicuro di voler reimpostare il contatore?',
+    'number_start'              => 'Numero iniziale installazione',
+    'number_start_desc'         => 'Questo valore viene usato solo quando non esistono ancora soci nel sistema. Dopo il primo socio il sistema usa sempre MAX+1 automaticamente.',
+    'number_start_hint'         => 'Usato solo per il primissimo socio creato.',
+    'number_start_inactive'     => 'Non applicabile — esistono già soci nel sistema. Il prossimo numero viene calcolato automaticamente.',
+    'number_start_save'         => 'Salva numero iniziale',
+    'number_start_invalid'      => 'Il numero iniziale deve essere almeno 1.',
+    'number_start_collision'    => 'Esiste già un socio con il numero :number.',
+    'number_start_below_max'    => 'Salvato. Il sistema assegnerà comunque :max + 1 ai nuovi soci (questo valore viene usato solo se non esistono ancora soci).',
+    'number_stat_count'         => 'Soci registrati',
+    'number_stat_last'          => 'Ultimo assegnato',
+    'number_stat_next'          => 'Prossimo',
+    'number_current_max'        => 'Ultimo numero assegnato',
+    'number_reset'              => 'Reimposta contatore',
+    'number_reset_desc'         => 'Imposta il numero progressivo da cui partirà la prossima assegnazione.',
+    'number_reset_warn'         => 'Il nuovo valore deve essere superiore all\'ultimo numero assegnato.',
+    'number_reset_confirm'      => 'Sei sicuro di voler reimpostare il contatore?',
 
     // -------------------------------------------------------------------------
     // Comuni

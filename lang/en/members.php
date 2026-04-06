@@ -223,6 +223,19 @@ return [
     'fee_set_new'                => 'Set new fee',
 
     // -------------------------------------------------------------------------
+    // Danger zone — change member number
+    // -------------------------------------------------------------------------
+    'dangerous_change_member_number'      => 'Change member number',
+    'dangerous_change_member_number_desc' => 'Manually assign a different member number. Use only to correct insertion errors. The number must be available.',
+    'dangerous_new_member_number'         => 'New member number',
+    'dangerous_current_number'            => 'Current number',
+    'dangerous_motivation'                => 'Motivation',
+    'dangerous_motivation_required'       => 'Motivation is required (minimum 10 characters).',
+    'dangerous_number_invalid'            => 'Member number must be a positive integer.',
+    'dangerous_number_taken'              => 'A member with number :number already exists.',
+    'dangerous_number_changed'            => 'Member number updated to :number.',
+
+    // -------------------------------------------------------------------------
     // Emergency delete
     // -------------------------------------------------------------------------
     'emergency_box_title'        => 'Danger zone',

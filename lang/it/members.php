@@ -223,6 +223,19 @@ return [
     'fee_set_new'                => 'Imposta nuova quota',
 
     // -------------------------------------------------------------------------
+    // Zona pericolosa — cambio numero socio
+    // -------------------------------------------------------------------------
+    'dangerous_change_member_number'      => 'Cambia numero socio',
+    'dangerous_change_member_number_desc' => 'Assegna manualmente un numero socio diverso. Usare solo per correggere errori di inserimento. Il numero deve essere libero.',
+    'dangerous_new_member_number'         => 'Nuovo numero socio',
+    'dangerous_current_number'            => 'Numero attuale',
+    'dangerous_motivation'                => 'Motivazione',
+    'dangerous_motivation_required'       => 'La motivazione è obbligatoria (minimo 10 caratteri).',
+    'dangerous_number_invalid'            => 'Il numero socio deve essere un intero positivo.',
+    'dangerous_number_taken'              => 'Esiste già un socio con il numero :number.',
+    'dangerous_number_changed'            => 'Numero socio aggiornato a :number.',
+
+    // -------------------------------------------------------------------------
     // Cancellazione emergenza
     // -------------------------------------------------------------------------
     'emergency_box_title'        => 'Zona pericolosa',

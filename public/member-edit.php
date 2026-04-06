@@ -59,9 +59,71 @@ try {
     }
 } catch (\Throwable) {}
 
+$isSuperAdmin = (int) ($currentUser['role_id'] ?? 4) === 1;
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!csrf_verify()) {
         $error = 'Sessione scaduta. Ricarica la pagina e riprova.';
+    } elseif (trim((string) ($_POST['_action'] ?? '')) === 'dangerous') {
+        // =====================================================================
+        // DANGER ZONE — super_admin only
+        // =====================================================================
+        if (!$isSuperAdmin) {
+            flash_set('error', __('members.delete_forbidden'));
+            redirect('member-edit.php?id=' . $id);
+        }
+
+        $operation  = trim((string) ($_POST['operation'] ?? ''));
+        $motivation = trim((string) ($_POST['motivation'] ?? ''));
+
+        if ($operation === 'change_member_number') {
+            $newMemberNumber = (int) ($_POST['new_member_number'] ?? 0);
+
+            if (strlen($motivation) < 10) {
+                flash_set('error', __('members.dangerous_motivation_required'));
+                redirect('member-edit.php?id=' . $id);
+            }
+            if ($newMemberNumber <= 0) {
+                flash_set('error', __('members.dangerous_number_invalid'));
+                redirect('member-edit.php?id=' . $id);
+            }
+
+            // Check not already taken by another member
+            $db     = \Socius\Core\Database::getInstance();
+            $taken  = $db->fetch(
+                'SELECT id FROM members WHERE member_number = ? AND id != ? LIMIT 1',
+                [$newMemberNumber, $id]
+            );
+            if ($taken !== false) {
+                flash_set('error', __('members.dangerous_number_taken',
+                    ['number' => format_member_number($newMemberNumber)]));
+                redirect('member-edit.php?id=' . $id);
+            }
+
+            $oldNumber = (int) ($member['member_number'] ?? 0);
+            $db->update('members', ['member_number' => $newMemberNumber], ['id' => $id]);
+
+            $db->insert('audit_logs', [
+                'user_id'     => current_user_id(),
+                'action'      => 'member.dangerous.change_member_number',
+                'entity_type' => 'members',
+                'entity_id'   => $id,
+                'old_values'  => json_encode(['member_number' => $oldNumber]),
+                'new_values'  => json_encode([
+                    'member_number' => $newMemberNumber,
+                    'motivation'    => $motivation,
+                ]),
+                'ip_address'  => client_ip(),
+                'user_agent'  => substr($_SERVER['HTTP_USER_AGENT'] ?? '', 0, 512),
+            ]);
+
+            csrf_regenerate();
+            flash_set('success', __('members.dangerous_number_changed',
+                ['number' => format_member_number($newMemberNumber)]));
+            redirect('member-edit.php?id=' . $id);
+        }
+
+        // Unknown operation — fall through to normal render
     } else {
         $oldData = $member;
         $data    = [
@@ -169,6 +231,7 @@ csrf_token();
 theme('member-form', [
     'activeNav'        => 'members',
     'currentUser'      => $currentUser,
+    'isSuperAdmin'     => $isSuperAdmin,
     'member'           => $member,
     'categories'       => $categories,
     'boardRoles'       => $boardRoles,

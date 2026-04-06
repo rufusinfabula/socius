@@ -355,19 +355,38 @@ function format_card_number(string|null $number): string
 }
 
 /**
- * Consume the next available member number from the settings counter.
+ * Generate the next available member number.
  *
- * Reads members.next_number from settings, returns it, then increments
- * the counter. This function has a side effect — call it only when
- * actually creating a new member.
+ * Logic:
+ * 1. If no members exist yet, use members.number_start from settings
+ *    (configured during installation or first setup).
+ * 2. Otherwise, always use MAX(member_number) + 1 from the database.
+ *
+ * This approach is fully automatic — no manual counter needed.
+ * The only configuration is members.number_start which is used
+ * exclusively for the very first member in a fresh installation.
+ *
+ * Note: deleted members leave gaps in the sequence. This is intentional —
+ * member numbers are permanent identifiers and are never reused
+ * automatically. Manual reassignment is possible via the danger zone
+ * in member-edit.php (super_admin only).
  *
  * @return int Raw integer to store in members.member_number
  */
 function next_member_number(): int
 {
-    $next = (int) \Socius\Models\Setting::get('members.next_number', 1);
-    \Socius\Models\Setting::set('members.next_number', (string) ($next + 1));
-    return $next;
+    $db  = \Socius\Core\Database::getInstance();
+    $row = $db->fetch('SELECT COALESCE(MAX(member_number), 0) AS max_num FROM members');
+    $dbMax = (int) ($row['max_num'] ?? 0);
+
+    if ($dbMax === 0) {
+        // No members yet — use the configured starting number
+        $start = (int) \Socius\Models\Setting::get('members.number_start', 1);
+        return max(1, $start);
+    }
+
+    // Always MAX + 1 — fully automatic, no counter to maintain
+    return $dbMax + 1;
 }
 
 /**

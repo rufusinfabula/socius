@@ -8,7 +8,7 @@ $se = fn(string $key, string $default = '') => $e($settings[explode('.', $key, 2
 $content = (function () use (
     $e, $sv, $se,
     $activeTab, $settings, $categories, $categoryFees, $boardRoles,
-    $languages, $themes, $memberCurrentMax, $currentUser, $isSuperAdmin
+    $languages, $themes, $memberCurrentMax, $memberCurrentCount, $currentUser, $isSuperAdmin
 ): string {
     ob_start();
     ?>
@@ -784,40 +784,81 @@ $content = (function () use (
              TAB 7 — NUMERO SOCIO
              ================================================================= -->
         <li>
-        <div class="uk-card uk-card-default uk-card-body uk-border-rounded" style="max-width:480px">
+        <div class="uk-card uk-card-default uk-card-body uk-border-rounded" style="max-width:520px">
             <h3 class="uk-card-title"><?= $e(__('settings.tab_member_number')) ?></h3>
 
-            <div class="uk-margin">
-                <p class="uk-text-muted uk-text-small uk-margin-remove-bottom">
-                    <?= $e(__('settings.number_current_max')) ?>
-                </p>
-                <p class="uk-margin-remove-top" style="font-size:1.8rem; font-weight:600">
-                    <?= (int) $memberCurrentMax > 0 ? $e((string) $memberCurrentMax) : '<span class="uk-text-muted" style="font-size:1rem">—</span>' ?>
-                </p>
+            <!-- Stats: current state of member numbering -->
+            <div class="uk-grid uk-grid-small uk-margin-bottom" uk-grid>
+                <div class="uk-width-1-3">
+                    <p class="uk-text-muted uk-text-small uk-margin-remove-bottom">
+                        <?= $e(__('settings.number_stat_count')) ?>
+                    </p>
+                    <p class="uk-margin-remove-top" style="font-size:1.5rem; font-weight:600">
+                        <?= (int) $memberCurrentCount ?>
+                    </p>
+                </div>
+                <div class="uk-width-1-3">
+                    <p class="uk-text-muted uk-text-small uk-margin-remove-bottom">
+                        <?= $e(__('settings.number_stat_last')) ?>
+                    </p>
+                    <p class="uk-margin-remove-top">
+                        <?php if ($memberCurrentMax > 0): ?>
+                        <span class="badge-member-number" style="font-size:1em">
+                            <?= $e(format_member_number($memberCurrentMax)) ?>
+                        </span>
+                        <?php else: ?>
+                        <span class="uk-text-muted">—</span>
+                        <?php endif; ?>
+                    </p>
+                </div>
+                <div class="uk-width-1-3">
+                    <p class="uk-text-muted uk-text-small uk-margin-remove-bottom">
+                        <?= $e(__('settings.number_stat_next')) ?>
+                    </p>
+                    <p class="uk-margin-remove-top">
+                        <?php
+                        $nextNum = $memberCurrentMax > 0
+                            ? $memberCurrentMax + 1
+                            : (int) \Socius\Models\Setting::get('members.number_start', 1);
+                        ?>
+                        <span class="badge-member-number" style="font-size:1em">
+                            <?= $e(format_member_number($nextNum)) ?>
+                        </span>
+                    </p>
+                </div>
             </div>
 
             <hr>
 
+            <!-- number_start — only relevant before first member is created -->
             <div class="uk-margin">
-                <p class="uk-text-small uk-text-muted"><?= $e(__('settings.number_reset_desc')) ?></p>
+                <p class="uk-text-small uk-text-muted"><?= $e(__('settings.number_start_desc')) ?></p>
             </div>
 
-            <form method="post" action="settings.php?tab=member_number" id="form-number-reset"
-                  onsubmit="return confirm(<?= $e("'" . addslashes(__('settings.number_reset_confirm')) . "'") ?>)">
+            <form method="post" action="settings.php?tab=member_number">
                 <?= csrf_field() ?>
                 <div class="uk-margin">
                     <label class="uk-form-label"><?= $e(__('settings.number_start')) ?></label>
+                    <?php
+                    $startVal = (int) \Socius\Models\Setting::get('members.number_start', 1);
+                    $hasMembers = $memberCurrentMax > 0;
+                    ?>
                     <input class="uk-input" type="number" name="number_start" min="1"
-                           value="<?= $e((string) max(1, $memberCurrentMax + 1)) ?>">
-                </div>
-                <div class="uk-alert-warning uk-margin" uk-alert>
-                    <p class="uk-text-small">
-                        <span uk-icon="warning"></span>
-                        <?= $e(__('settings.number_reset_warn')) ?>
+                           value="<?= $e((string) $startVal) ?>"
+                           <?= $hasMembers ? 'style="background:#f5f5f5; color:#999"' : '' ?>>
+                    <?php if ($hasMembers): ?>
+                    <p class="uk-text-small uk-text-muted uk-margin-small-top">
+                        <span uk-icon="icon:info; ratio:0.8"></span>
+                        <?= $e(__('settings.number_start_inactive')) ?>
                     </p>
+                    <?php else: ?>
+                    <p class="uk-text-small uk-text-muted uk-margin-small-top">
+                        <?= $e(__('settings.number_start_hint')) ?>
+                    </p>
+                    <?php endif; ?>
                 </div>
-                <button type="submit" class="uk-button uk-button-danger">
-                    <span uk-icon="refresh"></span> <?= $e(__('settings.number_reset')) ?>
+                <button type="submit" class="uk-button uk-button-default uk-button-small">
+                    <?= $e(__('settings.number_start_save')) ?>
                 </button>
             </form>
         </div>

@@ -283,19 +283,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         // -----------------------------------------------------------------
         case 'member_number':
-            $newStart   = (int) ($_POST['number_start'] ?? 1);
-            $currentMax = max(0, (int) Setting::get('members.next_number', '1') - 1);
-            if ($newStart < 1 || $newStart <= $currentMax) {
-                flash_set('error', __('settings.number_reset_warn'));
-            } else {
-                try {
-                    Setting::set('members.next_number', (string) $newStart);
-                    Setting::set('members.number_start', (string) $newStart);
-                    csrf_regenerate();
-                    flash_set('success', __('settings.saved_ok'));
-                } catch (\Throwable $ex) {
-                    flash_set('error', $ex->getMessage());
+            $newStart = (int) ($_POST['number_start'] ?? 1);
+            if ($newStart < 1) {
+                flash_set('error', __('settings.number_start_invalid'));
+                redirect('settings.php?tab=member_number');
+            }
+            try {
+                $db     = \Socius\Core\Database::getInstance();
+                $dbMax  = (int) ($db->fetch('SELECT COALESCE(MAX(member_number), 0) AS m FROM members')['m'] ?? 0);
+                // Check collision: new_start must not equal an existing member_number
+                $exists = $db->fetch(
+                    'SELECT id FROM members WHERE member_number = ? LIMIT 1',
+                    [$newStart]
+                );
+                if ($exists !== false) {
+                    flash_set('error', __('settings.number_start_collision',
+                        ['number' => format_member_number($newStart)]));
+                    redirect('settings.php?tab=member_number');
                 }
+                Setting::set('members.number_start', (string) $newStart);
+                csrf_regenerate();
+                if ($dbMax > 0 && $newStart <= $dbMax) {
+                    flash_set('warning', __('settings.number_start_below_max',
+                        ['max' => format_member_number($dbMax)]));
+                } else {
+                    flash_set('success', __('settings.saved_ok'));
+                }
+            } catch (\Throwable $ex) {
+                flash_set('error', $ex->getMessage());
             }
             redirect('settings.php?tab=member_number');
     }
@@ -370,8 +385,14 @@ if (is_dir($langBaseDir)) {
 }
 
 try {
-    $memberCurrentMax = max(0, (int) Setting::get('members.next_number', '1') - 1);
-} catch (\Throwable) {}
+    $db = \Socius\Core\Database::getInstance();
+    $row = $db->fetch('SELECT COALESCE(MAX(member_number), 0) AS mx, COUNT(*) AS cnt FROM members');
+    $memberCurrentMax   = (int) ($row['mx'] ?? 0);
+    $memberCurrentCount = (int) ($row['cnt'] ?? 0);
+} catch (\Throwable) {
+    $memberCurrentMax   = 0;
+    $memberCurrentCount = 0;
+}
 
 csrf_token();
 
@@ -387,7 +408,8 @@ theme('settings', [
     'boardRoles'      => $boardRoles,
     'languages'       => $languages,
     'themes'          => $themes,
-    'memberCurrentMax'=> $memberCurrentMax,
+    'memberCurrentMax'   => $memberCurrentMax,
+    'memberCurrentCount' => $memberCurrentCount ?? 0,
     'flashSuccess'    => flash_get('success'),
     'flashError'      => flash_get('error'),
 ]);
