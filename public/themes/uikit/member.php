@@ -310,10 +310,18 @@ $content = (function () use (
          Storico tessere
     ====================================================================== -->
     <div class="uk-card uk-card-default uk-card-body uk-border-rounded uk-margin-bottom">
-        <h3 class="uk-card-title">
-            <span uk-icon="icon: bookmark; ratio: 1.1" class="uk-margin-small-right"></span>
-            <?= $e(__('members.memberships_history')) ?>
-        </h3>
+        <div class="uk-flex uk-flex-between uk-flex-middle uk-margin-bottom">
+            <h3 class="uk-card-title uk-margin-remove">
+                <span uk-icon="icon: bookmark; ratio: 1.1" class="uk-margin-small-right"></span>
+                <?= $e(__('memberships.member_history')) ?>
+            </h3>
+            <?php if ($isStaff): ?>
+            <a href="membership-new.php?member_id=<?= (int) $member['id'] ?>"
+               class="uk-button uk-button-primary uk-button-small">
+                <span uk-icon="plus"></span> <?= $e(__('memberships.new_for_member')) ?>
+            </a>
+            <?php endif; ?>
+        </div>
         <?php if (empty($memberships)): ?>
             <p class="uk-text-muted"><?= $e(__('members.no_memberships')) ?></p>
         <?php else: ?>
@@ -321,21 +329,36 @@ $content = (function () use (
             <thead>
                 <tr>
                     <th><?= $e(__('members.membership_year')) ?></th>
+                    <th><?= $e(__('memberships.col_tessera')) ?></th>
+                    <th><?= $e(__('memberships.col_category')) ?></th>
                     <th><?= $e(__('members.membership_fee')) ?></th>
-                    <th><?= $e(__('members.membership_valid')) ?></th>
                     <th><?= $e(__('members.membership_status')) ?></th>
+                    <th><?= $e(__('members.actions')) ?></th>
                 </tr>
             </thead>
             <tbody>
                 <?php foreach ($memberships as $ms): ?>
                 <tr>
                     <td><?= (int) $ms['year'] ?></td>
-                    <td>€ <?= number_format((float) $ms['fee'], 2, ',', '.') ?></td>
-                    <td><?= $e(format_date($ms['valid_from'] ?? '') . ' / ' . format_date($ms['valid_until'] ?? '')) ?></td>
+                    <td><code><?= $e($member['membership_number'] ?? '—') ?></code></td>
+                    <td><?= $e($ms['category_name'] ?? '—') ?></td>
+                    <td>€&nbsp;<?= number_format((float) $ms['fee'], 2, ',', '.') ?></td>
                     <td>
                         <span class="uk-label uk-label-<?= $e($membershipStatusUkLabel[$ms['status']] ?? 'default') ?>">
-                            <?= $e($ms['status']) ?>
+                            <?= $e(__('memberships.status_' . ($ms['status'] ?? 'pending'))) ?>
                         </span>
+                    </td>
+                    <td>
+                        <a href="membership.php?id=<?= (int) $ms['id'] ?>"
+                           class="uk-button uk-button-default uk-button-small">
+                            <?= $e(__('memberships.action_detail')) ?>
+                        </a>
+                        <?php if ($isStaff): ?>
+                        <a href="membership-edit.php?id=<?= (int) $ms['id'] ?>"
+                           class="uk-button uk-button-default uk-button-small">
+                            <?= $e(__('memberships.action_edit')) ?>
+                        </a>
+                        <?php endif; ?>
                     </td>
                 </tr>
                 <?php endforeach; ?>

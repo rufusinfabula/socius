@@ -70,6 +70,11 @@
                     <span uk-icon="users" class="uk-margin-small-right"></span>Soci
                 </a>
             </li>
+            <li class="<?= ($activeNav ?? '') === 'memberships' ? 'uk-active' : '' ?>">
+                <a href="memberships.php">
+                    <span uk-icon="tag" class="uk-margin-small-right"></span>Tessere
+                </a>
+            </li>
             <li class="<?= ($activeNav ?? '') === 'events' ? 'uk-active' : '' ?>">
                 <a href="events.php">
                     <span uk-icon="calendar" class="uk-margin-small-right"></span>Eventi
