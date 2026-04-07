@@ -1,5 +1,9 @@
--- Rollback for migration 016: remove CASCADE from all FK constraints
+-- Migration 016: Cascade foreign keys on members
+-- Documents the FK changes applied manually to the development database.
+-- Ensures ON DELETE CASCADE for all tables referencing members,
+-- so that Member::emergencyDelete() only needs to delete the member row.
 
+-- Step 1: Drop existing FK constraints
 ALTER TABLE `payments` DROP FOREIGN KEY IF EXISTS `fk_payments_request`;
 ALTER TABLE `payments` DROP FOREIGN KEY IF EXISTS `fk_payments_member`;
 ALTER TABLE `memberships` DROP FOREIGN KEY IF EXISTS `fk_memberships_member`;
@@ -11,42 +15,55 @@ ALTER TABLE `gdpr_consents` DROP FOREIGN KEY IF EXISTS `fk_gdpr_member`;
 ALTER TABLE `event_registrations` DROP FOREIGN KEY IF EXISTS `fk_event_reg_member`;
 ALTER TABLE `event_registrations` DROP FOREIGN KEY IF EXISTS `fk_event_reg_payment`;
 
--- Recreate FK without CASCADE (MySQL default: RESTRICT)
+-- Step 2: Clean orphan records
+DELETE FROM `memberships`
+WHERE `member_id` NOT IN (SELECT `id` FROM `members`);
+
+-- Step 3: Recreate FK with CASCADE
 ALTER TABLE `payments`
   ADD CONSTRAINT `fk_payments_request`
-    FOREIGN KEY (`payment_request_id`) REFERENCES `payment_requests`(`id`);
+    FOREIGN KEY (`payment_request_id`) REFERENCES `payment_requests`(`id`)
+    ON DELETE CASCADE ON UPDATE CASCADE;
 
 ALTER TABLE `payments`
   ADD CONSTRAINT `fk_payments_member`
-    FOREIGN KEY (`member_id`) REFERENCES `members`(`id`);
+    FOREIGN KEY (`member_id`) REFERENCES `members`(`id`)
+    ON DELETE CASCADE ON UPDATE CASCADE;
 
 ALTER TABLE `memberships`
   ADD CONSTRAINT `fk_memberships_member`
-    FOREIGN KEY (`member_id`) REFERENCES `members`(`id`);
+    FOREIGN KEY (`member_id`) REFERENCES `members`(`id`)
+    ON DELETE CASCADE ON UPDATE CASCADE;
 
 ALTER TABLE `assembly_attendees`
   ADD CONSTRAINT `fk_assembly_att_member`
-    FOREIGN KEY (`member_id`) REFERENCES `members`(`id`);
+    FOREIGN KEY (`member_id`) REFERENCES `members`(`id`)
+    ON DELETE CASCADE ON UPDATE CASCADE;
 
 ALTER TABLE `assembly_delegates`
   ADD CONSTRAINT `fk_delegates_delegator`
-    FOREIGN KEY (`delegator_member_id`) REFERENCES `members`(`id`);
+    FOREIGN KEY (`delegator_member_id`) REFERENCES `members`(`id`)
+    ON DELETE CASCADE ON UPDATE CASCADE;
 
 ALTER TABLE `assembly_delegates`
   ADD CONSTRAINT `fk_delegates_delegate`
-    FOREIGN KEY (`delegate_member_id`) REFERENCES `members`(`id`);
+    FOREIGN KEY (`delegate_member_id`) REFERENCES `members`(`id`)
+    ON DELETE CASCADE ON UPDATE CASCADE;
 
 ALTER TABLE `communication_recipients`
   ADD CONSTRAINT `fk_comm_recipients_member`
-    FOREIGN KEY (`member_id`) REFERENCES `members`(`id`);
+    FOREIGN KEY (`member_id`) REFERENCES `members`(`id`)
+    ON DELETE CASCADE ON UPDATE CASCADE;
 
 ALTER TABLE `gdpr_consents`
   ADD CONSTRAINT `fk_gdpr_member`
-    FOREIGN KEY (`member_id`) REFERENCES `members`(`id`);
+    FOREIGN KEY (`member_id`) REFERENCES `members`(`id`)
+    ON DELETE CASCADE ON UPDATE CASCADE;
 
 ALTER TABLE `event_registrations`
   ADD CONSTRAINT `fk_event_reg_member`
-    FOREIGN KEY (`member_id`) REFERENCES `members`(`id`);
+    FOREIGN KEY (`member_id`) REFERENCES `members`(`id`)
+    ON DELETE CASCADE ON UPDATE CASCADE;
 
 ALTER TABLE `event_registrations`
   ADD CONSTRAINT `fk_event_reg_payment`
