@@ -504,7 +504,15 @@ $content = (function () use (
                     <td><?= $e(format_date($pay['paid_at'] ?? '', true)) ?></td>
                     <td>€ <?= number_format((float) $pay['amount'], 2, ',', '.') ?></td>
                     <td><?= $e($pay['gateway']) ?></td>
-                    <td><?= $e($pay['status']) ?></td>
+                    <?php
+                    $payStatusMap = [
+                        'completed' => __('memberships.status_paid'),
+                        'paid'      => __('memberships.status_paid'),
+                        'pending'   => __('memberships.status_pending'),
+                        'failed'    => __('memberships.status_cancelled'),
+                    ];
+                    ?>
+                    <td><?= $e($payStatusMap[$pay['status'] ?? ''] ?? ($pay['status'] ?? '')) ?></td>
                 </tr>
                 <?php endforeach; ?>
             </tbody>

@@ -2,13 +2,21 @@
 $e = fn($v) => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
 
 $membershipStatusLabel = [
-    'pending'   => 'In attesa',
-    'paid'      => 'Pagata',
-    'waived'    => 'Esonerata',
-    'cancelled' => 'Annullata',
+    'pending'   => __('memberships.status_pending'),
+    'paid'      => __('memberships.status_paid'),
+    'waived'    => __('memberships.status_waived'),
+    'cancelled' => __('memberships.status_cancelled'),
 ];
 
-$content = (function () use ($member, $memberships, $payments, $error, $e, $membershipStatusLabel): string {
+$paymentStatusLabel = [
+    'completed' => __('memberships.status_paid'),
+    'paid'      => __('memberships.status_paid'),
+    'pending'   => __('memberships.status_pending'),
+    'failed'    => __('memberships.status_cancelled'),
+    'refunded'  => 'Rimborsato',
+];
+
+$content = (function () use ($member, $memberships, $payments, $error, $e, $membershipStatusLabel, $paymentStatusLabel): string {
     ob_start();
     ?>
 
@@ -44,7 +52,7 @@ $content = (function () use ($member, $memberships, $payments, $error, $e, $memb
                     <dt>Email</dt>
                     <dd><?= $e($member['email']) ?></dd>
                     <dt>Stato</dt>
-                    <dd><?= $e($member['status']) ?></dd>
+                    <dd><?= $e(__('members.status_' . ($member['status'] ?? 'active'))) ?></dd>
                     <dt>Iscritto dal</dt>
                     <dd><?= $e($member['joined_on'] ?? '—') ?></dd>
                 </dl>
@@ -75,7 +83,7 @@ $content = (function () use ($member, $memberships, $payments, $error, $e, $memb
         <!-- Pagamenti mantenuti -->
         <div class="uk-width-1-1">
             <div class="uk-card uk-card-body uk-border-rounded" style="border:2px solid #32d296">
-                <h3 class="uk-card-title uk-text-success">Pagamenti mantenuti (member_id → NULL)</h3>
+                <h3 class="uk-card-title uk-text-success"><?= $e(__('members.payments_kept_title')) ?></h3>
                 <?php if (empty($payments)): ?>
                     <p class="uk-text-muted">Nessun pagamento registrato.</p>
                 <?php else: ?>
@@ -89,7 +97,7 @@ $content = (function () use ($member, $memberships, $payments, $error, $e, $memb
                             <td><?= $e($pay['paid_at']) ?></td>
                             <td>€ <?= number_format((float) $pay['amount'], 2, ',', '.') ?></td>
                             <td><?= $e($pay['gateway']) ?></td>
-                            <td><?= $e($pay['status']) ?></td>
+                            <td><?= $e($paymentStatusLabel[$pay['status'] ?? ''] ?? ($pay['status'] ?? '')) ?></td>
                         </tr>
                         <?php endforeach; ?>
                     </tbody>

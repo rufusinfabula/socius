@@ -345,11 +345,9 @@ class Member extends BaseModel
                 }
             }
 
-            // 3. Nullify member_id FK on payment_requests (keep payments intact)
-            $db->query(
-                'UPDATE payment_requests SET member_id = NULL WHERE member_id = ?',
-                [$id]
-            );
+            // 3. payment_requests: member_id is set to NULL automatically by the
+            //    ON DELETE SET NULL FK (migration 019). No manual UPDATE needed.
+            //    Payment records are preserved intact for audit purposes.
 
             // 4. memberships and other ON DELETE CASCADE rows are removed by FK
             // Delete memberships explicitly for clarity

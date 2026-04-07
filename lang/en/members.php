@@ -246,6 +246,7 @@ return [
     'delete_confirm_heading'     => 'Confirm member deletion',
     'memberships_to_delete'      => 'Memberships that will be deleted',
     'payments_kept'              => 'Payments that will be KEPT',
+    'payments_kept_title'        => 'Preserved payments (member link will be removed)',
     'free_number_label'          => 'Membership number handling',
     'free_number_yes'            => 'Release number (:number) — it can be reassigned',
     'free_number_no'             => 'Reserve number (:number) — it will not be reassigned',

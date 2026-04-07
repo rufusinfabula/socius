@@ -246,6 +246,7 @@ return [
     'delete_confirm_heading'     => 'Conferma cancellazione socio',
     'memberships_to_delete'      => 'Tessere che verranno cancellate',
     'payments_kept'              => 'Pagamenti che verranno MANTENUTI',
+    'payments_kept_title'        => 'Pagamenti mantenuti (collegamento al socio verrà rimosso)',
     'free_number_label'          => 'Gestione numero tessera',
     'free_number_yes'            => 'Libera il numero (:number) — potrà essere riassegnato',
     'free_number_no'             => 'Mantieni il numero (:number) come riservato — non verrà riassegnato',
