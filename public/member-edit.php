@@ -11,6 +11,8 @@ require_once __DIR__ . '/_init.php';
 requireStaff();
 
 use Socius\Models\Member;
+use Socius\Models\Membership;
+use Socius\Models\Payment;
 use Socius\Models\MembershipCategory;
 use Socius\Models\BoardRole;
 use Socius\Models\BoardMembership;
@@ -60,6 +62,14 @@ try {
 } catch (\Throwable) {}
 
 $isSuperAdmin = (int) ($currentUser['role_id'] ?? 4) === 1;
+
+// Pre-load danger zone data (shown in emergency delete summary)
+$memberMemberships = [];
+$memberPayments    = [];
+if ($isSuperAdmin) {
+    try { $memberMemberships = Membership::findByMember($id); } catch (\Throwable) {}
+    try { $memberPayments    = Payment::findByMember($id);    } catch (\Throwable) {}
+}
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!csrf_verify()) {
@@ -121,6 +131,68 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             flash_set('success', __('members.dangerous_number_changed',
                 ['number' => format_member_number($newMemberNumber)]));
             redirect('member-edit.php?id=' . $id);
+        }
+
+        if ($operation === 'force_member_status') {
+            $newStatus = trim((string) ($_POST['new_status'] ?? ''));
+            $validStatuses = ['active', 'in_renewal', 'not_renewed', 'lapsed', 'suspended', 'resigned', 'deceased'];
+
+            if (strlen($motivation) < 10) {
+                flash_set('error', __('members.dangerous_motivation_required'));
+                redirect('member-edit.php?id=' . $id);
+            }
+            if (!in_array($newStatus, $validStatuses, true)) {
+                flash_set('error', __('members.error_save_generic'));
+                redirect('member-edit.php?id=' . $id);
+            }
+
+            $oldStatus = $member['status'] ?? '';
+            $db = \Socius\Core\Database::getInstance();
+            $db->update('members', ['status' => $newStatus], ['id' => $id]);
+
+            $db->insert('audit_logs', [
+                'user_id'     => current_user_id(),
+                'action'      => 'member.dangerous.force_status',
+                'entity_type' => 'members',
+                'entity_id'   => $id,
+                'old_values'  => json_encode(['status' => $oldStatus]),
+                'new_values'  => json_encode([
+                    'status'     => $newStatus,
+                    'motivation' => $motivation,
+                ]),
+                'ip_address'  => client_ip(),
+                'user_agent'  => substr($_SERVER['HTTP_USER_AGENT'] ?? '', 0, 512),
+            ]);
+
+            csrf_regenerate();
+            flash_set('success', __('members.dangerous_force_status_changed',
+                ['status' => __('members.status_' . $newStatus)]));
+            redirect('member-edit.php?id=' . $id);
+        }
+
+        if ($operation === 'emergency_delete') {
+            $confirmWord = trim((string) ($_POST['confirm_word'] ?? ''));
+            $freeNumber  = (bool) ($_POST['free_number'] ?? false);
+
+            if (strlen($motivation) < 10) {
+                flash_set('error', __('members.dangerous_motivation_required'));
+                redirect('member-edit.php?id=' . $id);
+            }
+            if ($confirmWord !== 'DELETE') {
+                flash_set('error', __('members.delete_wrong_confirm'));
+                redirect('member-edit.php?id=' . $id);
+            }
+
+            $memberNumber = (int) ($member['member_number'] ?? 0);
+            $deleted = Member::emergencyDelete($id, $freeNumber, current_user_id(), $motivation, client_ip());
+
+            if ($deleted) {
+                flash_set('success', __('members.deleted_ok', ['number' => format_member_number($memberNumber)]));
+                redirect('members.php');
+            } else {
+                flash_set('error', __('members.not_found'));
+                redirect('member-edit.php?id=' . $id);
+            }
         }
 
         // Unknown operation — fall through to normal render
@@ -229,14 +301,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 csrf_token();
 
 theme('member-form', [
-    'activeNav'        => 'members',
-    'currentUser'      => $currentUser,
-    'isSuperAdmin'     => $isSuperAdmin,
-    'member'           => $member,
-    'categories'       => $categories,
-    'boardRoles'       => $boardRoles,
-    'currentBoardRole' => $currentBoardRole,
-    'isEdit'           => true,
-    'error'            => $error,
-    'errorDebug'       => $errorDebug ?? null,
+    'activeNav'          => 'members',
+    'currentUser'        => $currentUser,
+    'isSuperAdmin'       => $isSuperAdmin,
+    'member'             => $member,
+    'categories'         => $categories,
+    'boardRoles'         => $boardRoles,
+    'currentBoardRole'   => $currentBoardRole,
+    'memberMemberships'  => $memberMemberships,
+    'memberPayments'     => $memberPayments,
+    'isEdit'             => true,
+    'error'              => $error,
+    'errorDebug'         => $errorDebug ?? null,
 ]);

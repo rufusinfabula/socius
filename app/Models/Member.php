@@ -297,18 +297,23 @@ class Member extends BaseModel
     // =========================================================================
 
     /**
-     * Permanently delete a member and their memberships.
+     * Permanently delete a member and all their linked data.
      *
-     * Payments and audit_logs are kept.
-     * If $freeNumeroSocio is false, the membership_number is saved to
-     * reserved_member_numbers so it cannot be reused accidentally.
+     * Migration 020 ensures all FK constraints cascade-delete:
+     * memberships, payments, payment_requests, board_memberships,
+     * gdpr_consents, etc. are all removed when the member row is deleted.
+     * audit_logs has no FK on member_id and is always preserved.
+     *
+     * If $freeCardNumber is false, the card number (membership_number) is
+     * saved to reserved_member_numbers so it cannot be reused accidentally.
      *
      * @throws \RuntimeException on any DB error (rolls back the transaction)
      */
     public static function emergencyDelete(
         int    $id,
-        bool   $freeNumeroSocio,
-        int    $deletedByUserId,
+        bool   $freeCardNumber,
+        int    $deletedBy,
+        string $motivation,
         string $ip = ''
     ): bool {
         $member = self::findById($id);
@@ -317,27 +322,27 @@ class Member extends BaseModel
         }
 
         return (bool) self::db()->transaction(function ($db) use (
-            $id, $freeNumeroSocio, $deletedByUserId, $member, $ip
+            $id, $freeCardNumber, $deletedBy, $motivation, $member, $ip
         ) {
             // 1. Write audit log BEFORE deletion (audit_logs has no FK on member_id)
             $db->insert('audit_logs', [
-                'user_id'     => $deletedByUserId,
+                'user_id'     => $deletedBy,
                 'action'      => 'emergency_delete',
                 'entity_type' => 'members',
                 'entity_id'   => $id,
                 'old_values'  => json_encode($member),
-                'new_values'  => null,
+                'new_values'  => json_encode(['motivation' => $motivation]),
                 'ip_address'  => $ip,
                 'user_agent'  => substr($_SERVER['HTTP_USER_AGENT'] ?? '', 0, 512),
             ]);
 
-            // 2. Reserve the number if not freed
-            if (!$freeNumeroSocio) {
+            // 2. Reserve the card number if not freed
+            if (!$freeCardNumber && !empty($member['membership_number'])) {
                 try {
                     $db->insert('reserved_member_numbers', [
                         'membership_number' => $member['membership_number'],
                         'reserved_at'       => date('Y-m-d H:i:s'),
-                        'reserved_by'       => $deletedByUserId,
+                        'reserved_by'       => $deletedBy,
                         'reason'            => 'emergency_delete of member id ' . $id,
                     ]);
                 } catch (\Exception) {
@@ -345,15 +350,10 @@ class Member extends BaseModel
                 }
             }
 
-            // 3. payment_requests: member_id is set to NULL automatically by the
-            //    ON DELETE SET NULL FK (migration 019). No manual UPDATE needed.
-            //    Payment records are preserved intact for audit purposes.
-
-            // 4. memberships and other ON DELETE CASCADE rows are removed by FK
-            // Delete memberships explicitly for clarity
-            $db->delete('memberships', ['member_id' => $id]);
-
-            // 5. Delete the member record
+            // 3. Delete the member record.
+            //    All linked tables (memberships, payments, payment_requests,
+            //    board_memberships, gdpr_consents, …) cascade-delete via
+            //    ON DELETE CASCADE FKs (migrations 001, 009, 020).
             $db->delete('members', ['id' => $id]);
 
             return true;

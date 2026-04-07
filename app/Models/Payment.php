@@ -28,5 +28,16 @@ namespace Socius\Models;
  */
 class Payment extends BaseModel
 {
-    // placeholder
+    /**
+     * Return all payments for a member, newest first.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public static function findByMember(int $memberId): array
+    {
+        return self::db()->fetchAll(
+            'SELECT * FROM payments WHERE member_id = ? ORDER BY paid_at DESC',
+            [$memberId]
+        );
+    }
 }

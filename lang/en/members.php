@@ -223,6 +223,19 @@ return [
     'fee_set_new'                => 'Set new fee',
 
     // -------------------------------------------------------------------------
+    // Danger zone — general
+    // -------------------------------------------------------------------------
+    'dangerous_zone_desc'                    => 'Operations in this section are irreversible or hard to undo. Proceed with extreme caution.',
+
+    // -------------------------------------------------------------------------
+    // Danger zone — force member status
+    // -------------------------------------------------------------------------
+    'dangerous_force_status'                 => 'Force member status',
+    'dangerous_force_status_desc'            => 'Manually set the member status bypassing automatic rules. Use only to correct inconsistencies.',
+    'dangerous_force_status_new'             => 'New status',
+    'dangerous_force_status_changed'         => 'Member status updated to :status.',
+
+    // -------------------------------------------------------------------------
     // Danger zone — change member number
     // -------------------------------------------------------------------------
     'dangerous_change_member_number'      => 'Change member number',
@@ -234,6 +247,11 @@ return [
     'dangerous_number_invalid'            => 'Member number must be a positive integer.',
     'dangerous_number_taken'              => 'A member with number :number already exists.',
     'dangerous_number_changed'            => 'Member number updated to :number.',
+
+    // -------------------------------------------------------------------------
+    // Danger zone — emergency delete
+    // -------------------------------------------------------------------------
+    'payments_to_delete'           => 'Payments that will be deleted',
 
     // -------------------------------------------------------------------------
     // Emergency delete

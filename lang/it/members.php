@@ -223,6 +223,19 @@ return [
     'fee_set_new'                => 'Imposta nuova quota',
 
     // -------------------------------------------------------------------------
+    // Zona pericolosa — generale
+    // -------------------------------------------------------------------------
+    'dangerous_zone_desc'                    => 'Le operazioni in questa sezione sono irreversibili o difficilmente annullabili. Procedere con estrema cautela.',
+
+    // -------------------------------------------------------------------------
+    // Zona pericolosa — forza stato socio
+    // -------------------------------------------------------------------------
+    'dangerous_force_status'                 => 'Forza stato socio',
+    'dangerous_force_status_desc'            => 'Imposta manualmente lo stato del socio ignorando le regole automatiche. Usare solo per correggere incongruenze.',
+    'dangerous_force_status_new'             => 'Nuovo stato',
+    'dangerous_force_status_changed'         => 'Stato socio aggiornato a :status.',
+
+    // -------------------------------------------------------------------------
     // Zona pericolosa — cambio numero socio
     // -------------------------------------------------------------------------
     'dangerous_change_member_number'      => 'Cambia numero socio',
@@ -234,6 +247,11 @@ return [
     'dangerous_number_invalid'            => 'Il numero socio deve essere un intero positivo.',
     'dangerous_number_taken'              => 'Esiste già un socio con il numero :number.',
     'dangerous_number_changed'            => 'Numero socio aggiornato a :number.',
+
+    // -------------------------------------------------------------------------
+    // Zona pericolosa — cancellazione emergenza
+    // -------------------------------------------------------------------------
+    'payments_to_delete'           => 'Pagamenti che verranno eliminati',
 
     // -------------------------------------------------------------------------
     // Cancellazione emergenza

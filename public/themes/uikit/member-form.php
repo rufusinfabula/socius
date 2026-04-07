@@ -19,9 +19,13 @@ $statusOptions = [
 
 $isSuperAdmin = $isSuperAdmin ?? false;
 
+$memberMemberships = $memberMemberships ?? [];
+$memberPayments    = $memberPayments ?? [];
+
 $content = (function () use (
     $member, $categories, $boardRoles, $currentBoardRole, $currentUser,
     $isEdit, $heading, $action, $error, $errorDebug, $isSuperAdmin,
+    $memberMemberships, $memberPayments,
     $e, $v, $statusOptions
 ): string {
     ob_start();
@@ -411,74 +415,235 @@ $content = (function () use (
     <?php if ($isEdit && $isSuperAdmin): ?>
     <!-- =====================================================================
          ZONA PERICOLOSA — solo super_admin, solo in edit mode
+         UIkit accordion: multiple panels, each collapsed by default
          ===================================================================== -->
     <div class="uk-card uk-card-body uk-border-rounded uk-margin-top"
          style="border: 2px solid #e74c3c; background:#fff8f8">
+
         <h3 class="uk-card-title" style="color:#c0392b">
             <span uk-icon="icon: warning; ratio: 1.1" class="uk-margin-small-right"></span>
             <?= $e(__('members.emergency_box_title')) ?>
         </h3>
-        <p class="uk-text-small uk-text-muted"><?= $e(__('members.emergency_box_desc')) ?></p>
+        <p class="uk-text-small uk-text-muted uk-margin-small-bottom">
+            <?= $e(__('members.dangerous_zone_desc')) ?>
+        </p>
 
-        <!-- Op: Cambia numero socio -->
-        <div class="uk-card uk-card-default uk-card-body uk-border-rounded uk-margin-top"
-             style="border: 1px solid #e74c3c">
-            <h4 style="color:#e74c3c"><?= $e(__('members.dangerous_change_member_number')) ?></h4>
-            <p class="uk-text-small uk-text-muted">
-                <?= $e(__('members.dangerous_change_member_number_desc')) ?>
-            </p>
-            <form method="post"
-                  action="member-edit.php?id=<?= (int) ($member['id'] ?? 0) ?>"
-                  onsubmit="return confirm('Confermi questa operazione?')">
-                <?= csrf_field() ?>
-                <input type="hidden" name="_action" value="dangerous">
-                <input type="hidden" name="operation" value="change_member_number">
+        <ul uk-accordion="multiple: true">
 
-                <div class="uk-margin">
-                    <label class="uk-form-label">
-                        <?= $e(__('members.dangerous_new_member_number')) ?>
-                    </label>
-                    <div style="display:flex; align-items:center; gap:8px">
-                        <span class="badge-member-number" style="font-size:1em; padding:4px 10px">
-                            <?= htmlspecialchars(
-                                (string) \Socius\Models\Setting::get('members.number_prefix', 'M'),
-                                ENT_QUOTES, 'UTF-8'
-                            ) ?>
-                        </span>
-                        <input type="number"
-                               name="new_member_number"
-                               class="uk-input"
-                               style="width:130px"
-                               min="1"
-                               placeholder="00001"
-                               required>
-                    </div>
-                    <p class="uk-text-small uk-text-muted uk-margin-small-top">
-                        <?= $e(__('members.dangerous_current_number')) ?>:
-                        <span class="badge-member-number">
-                            <?= $e(format_member_number(isset($member['member_number']) ? (int) $member['member_number'] : null)) ?>
-                        </span>
-                    </p>
-                </div>
-
-                <div class="uk-margin">
-                    <label class="uk-form-label">
-                        <?= $e(__('members.dangerous_motivation')) ?> *
-                    </label>
-                    <textarea name="motivation"
-                              class="uk-textarea"
-                              rows="2"
-                              minlength="10"
-                              required
-                              placeholder="Motivazione obbligatoria (min 10 caratteri)…"></textarea>
-                </div>
-
-                <button type="submit" class="uk-button uk-button-danger uk-button-small">
+            <!-- ---------------------------------------------------------------
+                 Op 1: Cambia numero socio
+            ---------------------------------------------------------------- -->
+            <li>
+                <a class="uk-accordion-title uk-text-danger uk-text-small" href="#">
+                    <span uk-icon="icon: pencil; ratio: 0.9" class="uk-margin-small-right"></span>
                     <?= $e(__('members.dangerous_change_member_number')) ?>
-                </button>
-            </form>
-        </div>
+                </a>
+                <div class="uk-accordion-content">
+                    <p class="uk-text-small uk-text-muted">
+                        <?= $e(__('members.dangerous_change_member_number_desc')) ?>
+                    </p>
+                    <form method="post"
+                          action="member-edit.php?id=<?= (int) ($member['id'] ?? 0) ?>"
+                          onsubmit="return confirm('<?= $e(__('members.dangerous_change_member_number')) ?> — confermi?')">
+                        <?= csrf_field() ?>
+                        <input type="hidden" name="_action" value="dangerous">
+                        <input type="hidden" name="operation" value="change_member_number">
 
+                        <div class="uk-margin">
+                            <label class="uk-form-label">
+                                <?= $e(__('members.dangerous_new_member_number')) ?>
+                            </label>
+                            <div style="display:flex; align-items:center; gap:8px">
+                                <span class="badge-member-number" style="font-size:1em; padding:4px 10px">
+                                    <?= $e((string) \Socius\Models\Setting::get('members.number_prefix', 'M')) ?>
+                                </span>
+                                <input type="number" name="new_member_number" class="uk-input"
+                                       style="width:130px" min="1" placeholder="00001" required>
+                            </div>
+                            <p class="uk-text-small uk-text-muted uk-margin-small-top">
+                                <?= $e(__('members.dangerous_current_number')) ?>:
+                                <span class="badge-member-number">
+                                    <?= $e(format_member_number(isset($member['member_number']) ? (int) $member['member_number'] : null)) ?>
+                                </span>
+                            </p>
+                        </div>
+
+                        <div class="uk-margin">
+                            <label class="uk-form-label">
+                                <?= $e(__('members.dangerous_motivation')) ?> *
+                            </label>
+                            <textarea name="motivation" class="uk-textarea" rows="2"
+                                      minlength="10" required
+                                      placeholder="Motivazione obbligatoria (min 10 caratteri)…"></textarea>
+                        </div>
+
+                        <button type="submit" class="uk-button uk-button-danger uk-button-small">
+                            <?= $e(__('members.dangerous_change_member_number')) ?>
+                        </button>
+                    </form>
+                </div>
+            </li>
+
+            <!-- ---------------------------------------------------------------
+                 Op 2: Forza stato socio
+            ---------------------------------------------------------------- -->
+            <li>
+                <a class="uk-accordion-title uk-text-danger uk-text-small" href="#">
+                    <span uk-icon="icon: tag; ratio: 0.9" class="uk-margin-small-right"></span>
+                    <?= $e(__('members.dangerous_force_status')) ?>
+                </a>
+                <div class="uk-accordion-content">
+                    <p class="uk-text-small uk-text-muted">
+                        <?= $e(__('members.dangerous_force_status_desc')) ?>
+                    </p>
+                    <form method="post"
+                          action="member-edit.php?id=<?= (int) ($member['id'] ?? 0) ?>"
+                          onsubmit="return confirm('<?= $e(__('members.dangerous_force_status')) ?> — confermi?')">
+                        <?= csrf_field() ?>
+                        <input type="hidden" name="_action" value="dangerous">
+                        <input type="hidden" name="operation" value="force_member_status">
+
+                        <div class="uk-margin">
+                            <label class="uk-form-label">
+                                <?= $e(__('members.dangerous_force_status_new')) ?>
+                            </label>
+                            <select name="new_status" class="uk-select" style="max-width:260px" required>
+                                <?php foreach ($statusOptions as $val => $label): ?>
+                                    <option value="<?= $e($val) ?>"
+                                        <?= ($member['status'] ?? '') === $val ? 'selected' : '' ?>>
+                                        <?= $e($label) ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+
+                        <div class="uk-margin">
+                            <label class="uk-form-label">
+                                <?= $e(__('members.dangerous_motivation')) ?> *
+                            </label>
+                            <textarea name="motivation" class="uk-textarea" rows="2"
+                                      minlength="10" required
+                                      placeholder="Motivazione obbligatoria (min 10 caratteri)…"></textarea>
+                        </div>
+
+                        <button type="submit" class="uk-button uk-button-danger uk-button-small">
+                            <?= $e(__('members.dangerous_force_status')) ?>
+                        </button>
+                    </form>
+                </div>
+            </li>
+
+            <!-- ---------------------------------------------------------------
+                 Op 3: Cancellazione emergenza
+            ---------------------------------------------------------------- -->
+            <li>
+                <a class="uk-accordion-title uk-text-danger uk-text-small" href="#">
+                    <span uk-icon="icon: trash; ratio: 0.9" class="uk-margin-small-right"></span>
+                    <?= $e(__('members.emergency_delete')) ?>
+                    <span class="uk-label uk-label-danger uk-margin-small-left"
+                          style="font-size:0.7rem; vertical-align:middle">
+                        <?= $e(__('members.emergency_delete_warning')) ?>
+                    </span>
+                </a>
+                <div class="uk-accordion-content">
+                    <p class="uk-text-small uk-text-danger uk-text-bold">
+                        <?= $e(__('members.emergency_delete_desc')) ?>
+                    </p>
+
+                    <!-- Summary: tessere che saranno eliminate -->
+                    <?php if (!empty($memberMemberships)): ?>
+                    <div class="uk-margin-small">
+                        <p class="uk-text-small uk-text-muted uk-margin-remove-bottom">
+                            <strong><?= $e(__('members.memberships_to_delete')) ?>:</strong>
+                        </p>
+                        <ul class="uk-list uk-list-divider uk-text-small">
+                            <?php foreach ($memberMemberships as $ms): ?>
+                            <li>
+                                <?= (int) $ms['year'] ?>
+                                — <?= $e($ms['category_name'] ?? '—') ?>
+                                — €<?= number_format((float) $ms['fee'], 2) ?>
+                            </li>
+                            <?php endforeach; ?>
+                        </ul>
+                    </div>
+                    <?php endif; ?>
+
+                    <!-- Summary: pagamenti che saranno eliminati -->
+                    <?php if (!empty($memberPayments)): ?>
+                    <div class="uk-margin-small">
+                        <p class="uk-text-small uk-text-muted uk-margin-remove-bottom">
+                            <strong><?= $e(__('members.payments_to_delete')) ?>:</strong>
+                        </p>
+                        <ul class="uk-list uk-list-divider uk-text-small">
+                            <?php foreach ($memberPayments as $pay): ?>
+                            <li>
+                                <?= $e($pay['paid_at'] ?? '—') ?>
+                                — €<?= number_format((float) $pay['amount'], 2) ?>
+                                — <?= $e($pay['gateway'] ?? '—') ?>
+                            </li>
+                            <?php endforeach; ?>
+                        </ul>
+                    </div>
+                    <?php endif; ?>
+
+                    <form method="post"
+                          action="member-edit.php?id=<?= (int) ($member['id'] ?? 0) ?>"
+                          id="emergency-delete-form">
+                        <?= csrf_field() ?>
+                        <input type="hidden" name="_action" value="dangerous">
+                        <input type="hidden" name="operation" value="emergency_delete">
+
+                        <!-- Gestione numero tessera -->
+                        <?php if (!empty($member['membership_number'])): ?>
+                        <div class="uk-margin">
+                            <p class="uk-text-small uk-text-bold uk-margin-remove-bottom">
+                                <?= $e(__('members.free_number_label')) ?>
+                            </p>
+                            <label class="uk-margin-small-top" style="display:block">
+                                <input class="uk-radio" type="radio" name="free_number" value="1" checked>
+                                <?= $e(__('members.free_number_yes',
+                                    ['number' => $e(format_card_number($member['membership_number']))])) ?>
+                            </label>
+                            <label class="uk-margin-small-top" style="display:block">
+                                <input class="uk-radio" type="radio" name="free_number" value="0">
+                                <?= $e(__('members.free_number_no',
+                                    ['number' => $e(format_card_number($member['membership_number']))])) ?>
+                            </label>
+                        </div>
+                        <?php endif; ?>
+
+                        <!-- Motivazione -->
+                        <div class="uk-margin">
+                            <label class="uk-form-label">
+                                <?= $e(__('members.dangerous_motivation')) ?> *
+                            </label>
+                            <textarea name="motivation" class="uk-textarea" rows="2"
+                                      id="del-motivation"
+                                      minlength="10" required
+                                      placeholder="Motivazione obbligatoria (min 10 caratteri)…"></textarea>
+                        </div>
+
+                        <!-- Conferma digitando DELETE -->
+                        <div class="uk-margin">
+                            <label class="uk-form-label" for="del-confirm-word">
+                                <?= $e(__('members.delete_type_confirm')) ?>
+                            </label>
+                            <input class="uk-input" type="text" id="del-confirm-word"
+                                   name="confirm_word"
+                                   placeholder="<?= $e(__('members.delete_confirm_placeholder')) ?>"
+                                   autocomplete="off" style="max-width:200px">
+                        </div>
+
+                        <button type="submit" id="del-submit-btn"
+                                class="uk-button uk-button-danger uk-button-small" disabled>
+                            <span uk-icon="trash"></span>
+                            <?= $e(__('members.delete_execute')) ?>
+                        </button>
+                    </form>
+                </div>
+            </li>
+
+        </ul><!-- /uk-accordion -->
     </div>
     <?php endif; ?>
 
@@ -523,6 +688,15 @@ $content = (function () use (
         if (btnCf) {
             btnCf.addEventListener('click', function () {
                 cfNote.hidden = false;
+            });
+        }
+
+        // --- Emergency delete: enable button only when DELETE is typed ---
+        var delInput = document.getElementById('del-confirm-word');
+        var delBtn   = document.getElementById('del-submit-btn');
+        if (delInput && delBtn) {
+            delInput.addEventListener('input', function () {
+                delBtn.disabled = (this.value !== 'DELETE');
             });
         }
 

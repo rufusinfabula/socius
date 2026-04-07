@@ -528,7 +528,7 @@ $content = (function () use (
     </div>
 
     <!-- =====================================================================
-         Cancellazione emergenza (solo super_admin)
+         Cancellazione emergenza (solo super_admin) — link a member-edit.php
     ====================================================================== -->
     <?php if ($isSuperAdmin): ?>
     <div class="uk-card uk-card-body uk-border-rounded uk-margin-top"
@@ -538,9 +538,9 @@ $content = (function () use (
             <?= $e(__('members.emergency_box_title')) ?>
         </h3>
         <p class="uk-text-small uk-text-muted"><?= $e(__('members.emergency_box_desc')) ?></p>
-        <a href="member-delete.php?id=<?= (int) $member['id'] ?>"
+        <a href="member-edit.php?id=<?= (int) $member['id'] ?>"
            class="uk-button uk-button-danger uk-button-small">
-            <span uk-icon="trash"></span> <?= $e(__('members.emergency_delete')) ?>
+            <span uk-icon="warning"></span> <?= $e(__('members.emergency_box_title')) ?>
         </a>
     </div>
     <?php endif; ?>
