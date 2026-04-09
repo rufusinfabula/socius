@@ -468,39 +468,55 @@ function calculate_member_status(array $member, array $settings): string
         return (string) $member['status'];
     }
 
-    $today    = new DateTimeImmutable('today');
+    $today = new DateTimeImmutable('today');
+
+    $lapseMmdd = (string) ($settings['renewal.date_lapse'] ?? '12-31');
+    $closeMmdd = (string) ($settings['renewal.date_close'] ?? '04-15');
+    $openMmdd  = (string) ($settings['renewal.date_open']  ?? '11-15');
+
     $thisYear = (int) $today->format('Y');
 
-    // Parse renewal dates — stored as MM-DD in settings
-    $parseDate = static function (string $mmdd, int $year): DateTimeImmutable {
+    // Determine social year: advances to next year only after lapse date passes
+    [$lm, $ld]  = explode('-', $lapseMmdd);
+    $lapseCheck = new DateTimeImmutable(
+        sprintf('%04d-%02d-%02d', $thisYear, (int) $lm, (int) $ld)
+    );
+    $socialYear = ($today > $lapseCheck) ? $thisYear + 1 : $thisYear;
+
+    // Determine the year for renewal_open.
+    // If open MM-DD > close MM-DD (e.g. '11-15' > '04-15') the opening
+    // falls in the year before the social year; otherwise same year.
+    $renewalOpenYear = ($openMmdd > $closeMmdd) ? $socialYear - 1 : $socialYear;
+
+    $buildDate = static function (string $mmdd, int $year): DateTimeImmutable {
         [$m, $d] = explode('-', $mmdd);
         return new DateTimeImmutable(
             sprintf('%04d-%02d-%02d', $year, (int) $m, (int) $d)
         );
     };
 
-    $renewalOpen  = $parseDate((string) ($settings['renewal.date_open']  ?? '11-15'), $thisYear - 1);
-    $renewalClose = $parseDate((string) ($settings['renewal.date_close'] ?? '04-15'), $thisYear);
-    $lapse        = $parseDate((string) ($settings['renewal.date_lapse'] ?? '12-31'), $thisYear);
+    $renewalOpen  = $buildDate($openMmdd,  $renewalOpenYear);
+    $renewalClose = $buildDate($closeMmdd, $socialYear);
+    $lapse        = $buildDate($lapseMmdd, $socialYear);
 
-    // Check for paid/waived membership this year
-    $hasThisYear = !empty($member['membership_year'])
-        && (int) $member['membership_year'] === $thisYear
+    // Check for paid/waived membership for the current social year
+    $hasCurrentYear = !empty($member['membership_year'])
+        && (int) $member['membership_year'] === $socialYear
         && in_array($member['membership_status'] ?? '', ['paid', 'waived'], true);
 
-    // Check for paid/waived membership last year
-    $hasLastYear = !empty($member['membership_year'])
-        && (int) $member['membership_year'] === ($thisYear - 1)
+    // Check for paid/waived membership for the previous social year
+    $hasPreviousYear = !empty($member['membership_year'])
+        && (int) $member['membership_year'] === ($socialYear - 1)
         && in_array($member['membership_status'] ?? '', ['paid', 'waived'], true);
 
-    if ($hasThisYear) {
+    if ($hasCurrentYear) {
         if ($today >= $renewalOpen && $today <= $renewalClose) {
             return 'in_renewal';
         }
         return 'active';
     }
 
-    if ($hasLastYear) {
+    if ($hasPreviousYear) {
         if ($today < $renewalOpen) {
             return 'active';
         }

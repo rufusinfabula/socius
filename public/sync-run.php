@@ -18,7 +18,7 @@ requireAuth();
 
 // URL di ritorno (validato: solo path relativo nel dominio corrente)
 $returnUrl = trim((string) ($_GET['return'] ?? ''));
-if ($returnUrl === '' || !preg_match('#^[a-zA-Z0-9/_\-.?&=%#+]+$#', $returnUrl)) {
+if ($returnUrl === '' || !preg_match('~^[a-zA-Z0-9/_\-.?&=%#+]+$~', $returnUrl)) {
     $returnUrl = 'dashboard.php';
 }
 ?>
