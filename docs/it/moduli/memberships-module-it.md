@@ -1,12 +1,12 @@
 # Modulo Tessere
 
-**Socius v0.3.x — Documentazione del modulo**
+**Socius v0.3.x — Documentazione del modulo (aggiornata alla v0.3.9)**
 
 ---
 
 ## Panoramica
 
-Il modulo Tessere gestisce le tessere annuali dei soci. Ogni record tessera rappresenta la partecipazione di un socio per un anno sociale. Il modulo gestisce la creazione manuale delle tessere, la registrazione dei pagamenti, la gestione dei numeri tessera e la zona pericolosa per le correzioni amministrative.
+Il modulo Tessere gestisce le tessere annuali dei soci. Ogni record tessera rappresenta la partecipazione di un socio per un anno sociale. Il modulo gestisce la creazione manuale delle tessere, la registrazione dei pagamenti, la gestione dei numeri tessera, la sincronizzazione automatica degli status soci e la zona pericolosa per le correzioni amministrative.
 
 ---
 
@@ -28,29 +28,39 @@ Il numero tessera in `memberships.membership_number` è la **fonte primaria**. I
 |---|---|
 | `pending` | Creata ma pagamento non ancora ricevuto |
 | `paid` | Pagamento confermato, tessera attiva |
-| `waived` | Quota condonata (es. soci onorari, delibera direttivo) |
+| `waived` | Quota condonata per delibera del direttivo (es. soci onorari) |
 | `cancelled` | Annullata — errore di inserimento o altro motivo |
 
-### Ciclo di vita del numero tessera
+`paid` e `waived` sono equivalenti ai fini del calcolo dello status socio — entrambi rendono il socio `active`.
 
-```
-Socio creato → membership_number = NULL su members
-               (nessuna tessera ancora)
+### Status del socio e ciclo di rinnovo
 
-Tessera creata → numero assegnato (es. C00001)
-                 salvato in memberships.membership_number
-                 copiato su members.membership_number
+Lo status del socio viene calcolato automaticamente dal sistema Sync. La logica si basa sulla tessera più recente del socio e dalla posizione di oggi nel ciclo dell'anno sociale.
 
-Socio rinnova → stesso numero mantenuto
-                nuovo record tessera per il nuovo anno
+| Condizione | Status socio |
+|---|---|
+| Ha tessera `paid`/`waived` per l'anno sociale corrente | `active` |
+| Ha tessera `pending` per l'anno corrente, dentro la finestra di rinnovo | `in_renewal` |
+| Ha tessera `pending` per l'anno corrente, dopo la chiusura rinnovi | `not_renewed` |
+| Ha tessera `pending` per l'anno corrente, dopo la data di decadenza | `lapsed` |
+| Ha avuto tessera `paid`/`waived` l'anno scorso, prima dell'apertura rinnovi | `active` |
+| Ha avuto tessera `paid`/`waived` l'anno scorso, dentro la finestra di rinnovo | `in_renewal` |
+| Ha avuto tessera `paid`/`waived` l'anno scorso, dopo la chiusura rinnovi | `not_renewed` |
+| Ha avuto tessera `paid`/`waived` l'anno scorso, dopo la decadenza | `lapsed` |
+| Nessuna tessera recente valida | `lapsed` |
 
-Socio decade → members.membership_number = NULL
-               la tessera storica mantiene C00001
-               numero disponibile per riassegnazione
+Gli status `suspended`, `resigned` e `deceased` non vengono **mai toccati dal sync** — vengono impostati manualmente e hanno sempre priorità assoluta.
 
-Cancellazione emergenza → tutti i dati rimossi
-                          tessere incluse
-```
+### Determinazione dell'anno sociale
+
+L'anno sociale è l'anno per cui si stanno gestendo le tessere. Avanza all'anno solare successivo solo dopo che la data di decadenza è passata.
+
+La data di `renewal_open` può appartenere all'anno solare precedente (es. novembre apre i rinnovi per l'anno successivo). Questo viene determinato confrontando `renewal_open` MM-GG con `renewal_close` MM-GG: se `open > close` come stringhe, la data di apertura appartiene a `socialYear - 1`. Questa logica funziona per qualsiasi configurazione senza soglie arbitrarie.
+
+Esempi:
+- Ciclo Nov → Apr: `'11-15' > '04-15'` → renewal_open è nell'anno prima del social year
+- Ciclo Set → Giu: `'09-01' > '06-30'` → renewal_open è nell'anno prima del social year
+- Ciclo Gen → Giu: `'01-02' < '06-30'` → renewal_open è nello stesso social year
 
 ---
 
@@ -65,26 +75,26 @@ Una riga per socio per anno.
 | `id` | INT PK | |
 | `member_id` | INT FK → members | ON DELETE CASCADE |
 | `membership_number` | VARCHAR(10) NULL | Fonte primaria del numero tessera |
-| `category_id` | INT FK → membership_categories | |
+| `category_id` | INT FK → membership_categories | La categoria appartiene alla tessera, non al socio |
 | `year` | YEAR | Anno sociale |
 | `fee` | DECIMAL(8,2) | Quota applicata per questo anno |
 | `status` | ENUM | pending, paid, waived, cancelled |
 | `valid_from` | DATE | Inizio validità |
-| `valid_until` | DATE | Fine validità (di solito 31 dicembre) |
+| `valid_until` | DATE | Fine validità |
 | `paid_on` | DATE NULL | Data ricezione pagamento |
 | `payment_method` | ENUM NULL | cash, bank_transfer, paypal, satispay, waived, other |
 | `payment_reference` | VARCHAR(255) NULL | Numero ricevuta, causale bonifico |
 | `notes` | TEXT NULL | Note interne |
 
+Nota: la categoria è collegata alla tessera, non al socio. Un socio può avere categorie diverse in anni diversi (es. Ordinario nel 2024, Onorario nel 2025).
+
 ### `reserved_member_numbers`
 
-Numeri tessera che non devono mai essere riassegnati.
+Numeri tessera riservati permanentemente — non vengono mai riassegnati.
 
 | Colonna | Tipo | Note |
 |---|---|---|
-| `id` | INT PK | |
 | `membership_number` | VARCHAR(20) UNIQUE | es. C00001 |
-| `reserved_at` | TIMESTAMP | |
 | `reserved_by` | INT | users.id — senza FK, sopravvive alla cancellazione utente |
 | `reason` | VARCHAR(500) NULL | Motivazione della riserva |
 
@@ -101,14 +111,16 @@ Numeri tessera che non devono mai essere riassegnati.
 
 ---
 
-## Lista tessere
+## Anni disponibili per nuova tessera
 
-URL: `memberships.php`
+Il select anno nel form tessera viene popolato dinamicamente da due fonti:
 
-Filtri: anno (default: corrente), status, categoria.
-Colonne: N. Socio | Cognome Nome | Categoria | Anno | N. Tessera | Quota | Status | Pagato il | Azioni.
+1. Gli anni presenti in `membership_category_fees` (anni per cui sono state configurate le quote nelle impostazioni)
+2. L'anno corrente — sempre incluso anche senza quote configurate
 
-Entrambi i numeri M e C vengono mostrati con i rispettivi badge CSS.
+Questo significa che l'admin dovrebbe configurare le quote per un anno prima di creare tessere per quell'anno. L'anno corrente è sempre disponibile come fallback usando la quota di default della categoria.
+
+Controllo duplicati: se esiste già una tessera per il socio selezionato e l'anno scelto, il sistema blocca la creazione e mostra un link alla tessera esistente.
 
 ---
 
@@ -116,31 +128,13 @@ Entrambi i numeri M e C vengono mostrati con i rispettivi badge CSS.
 
 URL: `membership-new.php` oppure `membership-new.php?member_id=N`
 
-**Selezione socio**: campo di ricerca live che usa `api/members-search.php`. Ricerca per nome, cognome o numero socio (M00001). Minimo 2 caratteri, debounce 300ms. I risultati mostrano nome e badge M. Se `?member_id` è presente nell'URL (arrivo dal profilo socio), il campo è pre-compilato.
-
-**Campi del form**:
-
-*Box Tessera:*
-- Socio (ricerca o pre-compilato)
-- Anno sociale (corrente o successivo)
-- Numero tessera (proposto automaticamente, modificabile)
-- Categoria (solo categorie attive)
-- Quota (pre-compilata dalla categoria, modificabile)
-- Status (default: pending)
-
-*Box Pagamento (nascosto se status = waived o cancelled):*
-- Metodo pagamento
-- Data pagamento (default: oggi)
-- Riferimento (numero ricevuta, causale bonifico)
-- Note
-
-**Assegnazione numero tessera**: `next_card_number()` trova `MAX(parte numerica del membership_number)` tra `members` e `reserved_member_numbers`, poi restituisce prefisso + (max + 1). Il numero proposto viene mostrato con lo stile `.badge-card-number` e può essere modificato dall'admin.
+**Selezione socio**: campo di ricerca live che usa `api/members-search.php`. Ricerca per nome, cognome o numero socio (M00001). Minimo 2 caratteri, debounce 300ms.
 
 **Dopo la creazione**:
-- Se il metodo di pagamento non è "nessuno": crea record `payment_requests` e `payments`, imposta status tessera a `paid`
+- Se il metodo di pagamento non è "nessuno": crea record `payment_requests` e `payments`, imposta status a `paid`
 - Se la categoria ha `is_exempt_from_renewal = true`: imposta status a `waived`
 - Aggiorna `members.membership_number` con il nuovo numero tessera
-- Aggiorna `members.status` a `active` se la tessera è paid o waived
+- Ricalcola e aggiorna immediatamente `members.status` per questo socio
 
 ---
 
@@ -150,130 +144,105 @@ URL: `membership-edit.php?id=N`
 
 **Modifica normale** (admin e segreteria): status, quota, data pagamento, metodo pagamento, note.
 
-**Zona pericolosa** (solo super_admin) — UIkit Accordion, chiuso di default:
-
-Ogni operazione richiede una motivazione obbligatoria (min 10 caratteri) e viene registrata in `audit_logs`.
+**Zona pericolosa** (solo super_admin) — UIkit Accordion, chiuso di default. Ogni operazione richiede motivazione obbligatoria (min 10 caratteri) e viene registrata in `audit_logs`.
 
 | Operazione | Descrizione |
 |---|---|
-| Riserva numero tessera | Riserva permanentemente il numero — non verrà mai riassegnato |
+| Riserva numero tessera | Riserva permanentemente il numero — mai riassegnato. Salvato in `reserved_member_numbers`. |
 | Cambia numero tessera | Assegna un diverso numero tessera disponibile |
 | Forza status tessera | Cambia lo status bypassando il flusso normale |
-| Correggi quota pagata | Corregge l'importo registrato (correzione errori di inserimento) |
+| Correggi quota pagata | Corregge l'importo registrato — solo per errori di inserimento |
 | Forza status socio | Cambia lo status del socio bypassando il ciclo di rinnovo |
 
 ---
 
-## Profilo socio — storico tessere
+## Sistema Sync
 
-In `member.php`, una sezione "Storico tessere" mostra tutte le tessere del socio ordinate per anno decrescente.
+Il sistema Sync ricalcola automaticamente gli status dei soci. Gira una volta al giorno — attivato dal primo login della giornata. Può essere forzato manualmente in qualsiasi momento tramite l'icona nella navbar.
 
-Colonne: Anno | N. Tessera | Categoria | Quota | Status | Azioni (Dettaglio / Modifica).
+### Come funziona
 
-Pulsante "Nuova tessera per questo socio" porta a `membership-new.php?member_id=N`.
+Ad ogni login, il sistema controlla `system.last_sync_date` nelle impostazioni. Se la data è diversa da oggi, redirige a `sync-run.php` che chiama `sync.php?action=run` via AJAX, mostra uno spinner durante l'elaborazione, poi redirige alla pagina in cui si trovava l'utente (o alla dashboard).
+
+### Endpoint di sync.php
+
+| Azione | Descrizione |
+|---|---|
+| `?action=run` | Esegue il ricalcolo completo per tutti i soci |
+| `?action=status` | Restituisce i metadati del sync corrente come JSON |
+
+Formato risposta:
+```json
+{
+  "ok": true,
+  "updated": 12,
+  "total": 105,
+  "duration_ms": 234,
+  "last_sync_date": "09/04/2026",
+  "is_synced": true
+}
+```
+
+### Indicatore Sync nella navbar
+
+La navbar mostra un'icona Lucide che indica lo stato del sync corrente. Lucide è caricato via CDN in `layout.php`.
+
+| Stato | Icona | Colore |
+|---|---|---|
+| Sincronizzato oggi | `cloud-check` | Verde (#28a745) |
+| Non ancora sincronizzato | `cloud` | Arancione (#fd7e14) |
+
+Cliccando l'icona si attiva `sync-run.php?return={url_corrente}` — dopo il sync l'utente torna alla pagina in cui si trovava.
+
+### Chiavi settings usate dal sync
+
+| Chiave | Descrizione |
+|---|---|
+| `system.last_sync_date` | Data dell'ultimo ricalcolo (Y-m-d) |
+| `system.last_sync_count` | Numero di soci aggiornati nell'ultimo sync |
+| `system.last_sync_duration_ms` | Durata dell'ultimo sync in millisecondi |
+
+### Ricalcolo immediato per singolo socio
+
+Quando si crea una tessera o si cambia il suo status, il sistema ricalcola immediatamente lo status di quel singolo socio senza aspettare il sync giornaliero.
 
 ---
 
-## API interna
+## calculate_member_status()
 
-Il modulo tessere usa la famiglia API interna in `public/api/`:
+Definita in `public/_init.php`. Riceve un array socio (con i dati della tessera più recente in JOIN) e l'array completo delle impostazioni. Restituisce la stringa dello status calcolato.
 
-| Endpoint | Usato da |
-|---|---|
-| `api/members-search.php?q=` | Campo ricerca socio in membership-new.php |
-| `api/member.php?id=` | Pre-compilazione categoria dopo selezione socio |
+I soci con status `suspended`, `resigned` o `deceased` vengono esclusi dal sync — questi status non vengono mai sovrascritti automaticamente.
 
 ---
 
-## Modelli
+## Famiglia API interna
 
-**`app/Models/Membership.php`**
+Tutti gli endpoint richiedono autenticazione. Tutti restituiscono JSON.
 
-| Metodo | Descrizione |
-|---|---|
-| `findAll(array $filters, int $page, int $perPage)` | Lista paginata con filtri |
-| `findById(int $id)` | Singola tessera con dati socio e categoria |
-| `findByMember(int $memberId)` | Tutte le tessere di un socio |
-| `getCurrentForMember(int $memberId)` | Tessera anno corrente per un socio |
-| `create(array $data)` | Crea tessera, assegna numero, aggiorna socio |
-| `update(int $id, array $data)` | Aggiorna campi, sincronizza numero tessera se anno corrente |
-| `releaseCardNumber(int $memberId)` | Imposta members.membership_number = NULL alla decadenza |
-| `getNextAvailableNumber()` | Restituisce il prossimo numero tessera disponibile |
-| `getYearsWithMemberships()` | Anni distinti presenti in memberships |
-
-**`app/Models/Member.php`** (metodi rilevanti per le tessere)
-
-| Metodo | Descrizione |
-|---|---|
-| `updateCardNumber(int $memberId, ?string $cardNumber)` | Aggiorna la copia denormalizzata del numero tessera sul socio |
+| Endpoint | Parametri | Usato da |
+|---|---|---|
+| `api/members-search.php` | `?q=&limit=&status=` | Ricerca socio nei form |
+| `api/member.php` | `?id=` | Pre-compilazione form dopo selezione socio |
+| `api/members-list.php` | `?status=&category_id=&board=&year=&page=` | Lista filtrata per moduli futuri |
+| `api/member-stats.php` | `?year=` | Statistiche aggregate (cache 5 min) |
 
 ---
 
 ## Badge CSS
 
-Due classi CSS globali definite in `public/themes/uikit/layout.php`:
+Definiti globalmente in `public/themes/uikit/layout.php`:
 
 ```css
-.badge-member-number {
-    font-family: monospace;
-    background: #E8F0FE;
-    color: #1A3A6B;
-    /* blu — identificatore permanente */
-}
-
-.badge-card-number {
-    font-family: monospace;
-    background: #E6F4EA;
-    color: #1B5E2F;
-    /* verde — tessera attiva */
-}
+.badge-member-number { font-family: monospace; background: #E8F0FE; color: #1A3A6B; }
+.badge-card-number   { font-family: monospace; background: #E6F4EA; color: #1B5E2F; }
 ```
-
-Uso nei template:
-```html
-<span class="badge-member-number">M00001</span>
-<span class="badge-card-number">C00001</span>
-```
-
----
-
-## Funzioni helper
-
-**`next_card_number(): string`**
-Genera il prossimo numero tessera disponibile. Legge MAX da `members.membership_number` e `reserved_member_numbers`, restituisce prefisso + (max + 1) con zero padding.
-
-**`format_member_number(?int $number): string`**
-Formatta un intero grezzo come M00001. Restituisce `—` per null.
-
-**`format_card_number(?string $number): string`**
-Restituisce la stringa del numero tessera o `—` per null/vuoto.
-
-Prefisso e numero di cifre sono configurabili nelle impostazioni:
-- `members.number_prefix` (default: M)
-- `members.card_prefix` (default: C)
-- `members.number_digits` (default: 5)
 
 ---
 
 ## Vincoli di chiave esterna
 
-Tutte le tabelle collegate a `members` usano `ON DELETE CASCADE`:
-
-| Tabella | Colonna | Comportamento alla cancellazione socio |
-|---|---|---|
-| `memberships` | `member_id` | CASCADE — eliminata |
-| `payments` | `member_id` | CASCADE — eliminato |
-| `payment_requests` | `member_id` | CASCADE — eliminata |
-| `payments` | `payment_request_id` | CASCADE — eliminato |
-| `assembly_attendees` | `member_id` | CASCADE — eliminato |
-| `assembly_delegates` | `delegator_member_id` | CASCADE — eliminato |
-| `assembly_delegates` | `delegate_member_id` | CASCADE — eliminato |
-| `communication_recipients` | `member_id` | CASCADE — eliminato |
-| `gdpr_consents` | `member_id` | CASCADE — eliminato |
-| `event_registrations` | `member_id` | CASCADE — eliminato |
-| `event_registrations` | `payment_request_id` | SET NULL |
-
-La cancellazione di emergenza è l'unica operazione che attiva questi CASCADE. Le operazioni normali non cancellano mai i record socio.
+Tutte le tabelle collegate a `members` usano `ON DELETE CASCADE`. La cancellazione di emergenza di un socio attiva tutti i CASCADE in una singola transazione, rimuovendo tutti i record collegati inclusi tessere, pagamenti e richieste di pagamento.
 
 ---
 
@@ -281,7 +250,8 @@ La cancellazione di emergenza è l'unica operazione che attiva questi CASCADE. L
 
 | File | Descrizione |
 |---|---|
-| `013_memberships_indexes.sql` | Aggiunto indici, colonne payment_method e payment_reference |
-| `014_membership_number_restructure.sql` | Aggiunto membership_number a memberships, formato M/C, impostazioni prefissi |
-| `015_fix_membership_number_nullable.sql` | Reso nullable memberships.membership_number |
-| `016_cascade_foreign_keys.sql` | Aggiunto ON DELETE CASCADE a tutte le FK collegate ai soci |
+| `013_memberships_indexes.sql` | Indici, colonne payment_method e payment_reference |
+| `014_membership_number_restructure.sql` | membership_number in memberships, formato M/C, impostazioni prefissi |
+| `015_fix_membership_number_nullable.sql` | membership_number nullable in memberships |
+| `016_cascade_foreign_keys.sql` | ON DELETE CASCADE su tutte le FK collegate ai soci |
+| `017_member_status_sync.sql` | email nullable su members, rimozione category_id da members, chiavi sync in settings |

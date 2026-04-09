@@ -1,12 +1,12 @@
 # Memberships Module
 
-**Socius v0.3.x — Module documentation**
+**Socius v0.3.x — Module documentation (updated to v0.3.9)**
 
 ---
 
 ## Overview
 
-The Memberships module manages annual membership cards for association members. Each membership record represents one member's participation for one social year. The module handles manual card creation, payment registration, card number management, and the danger zone for administrative corrections.
+The Memberships module manages annual membership cards for association members. Each membership record represents one member's participation for one social year. The module handles manual card creation, payment registration, card number management, member status synchronisation, and the danger zone for administrative corrections.
 
 ---
 
@@ -20,7 +20,7 @@ Two distinct identifiers coexist in Socius:
 
 **Card number** (`memberships.membership_number`) — alphanumeric code assigned when a membership is created. Format: `C00001`. Stable as long as the member renews. Released (set to NULL on `members`) if the member lapses. Historical membership records always retain their card number.
 
-The card number in `memberships.membership_number` is the **source of truth**. The field `members.membership_number` is a denormalized copy updated automatically by the system — never modify it directly.
+The card number in `memberships.membership_number` is the **source of truth**. The field `members.membership_number` is a denormalized copy updated automatically — never modify it directly.
 
 ### Membership status
 
@@ -28,28 +28,39 @@ The card number in `memberships.membership_number` is the **source of truth**. T
 |---|---|
 | `pending` | Created but payment not yet received |
 | `paid` | Payment confirmed, card active |
-| `waived` | Fee waived (e.g. honorary members, board decision) |
+| `waived` | Fee waived by board decision (e.g. honorary members) |
 | `cancelled` | Cancelled — insertion error or other reason |
 
-### Card number lifecycle
+`paid` and `waived` are equivalent for all status calculation purposes — both make a member `active`.
 
-```
-Member created → membership_number = NULL on members
-                 (no card yet)
+### Member status and the renewal cycle
 
-Membership created → card number assigned (e.g. C00001)
-                     stored in memberships.membership_number
-                     copied to members.membership_number
+Member status is calculated automatically by the Sync system. The logic is based on the member's most recent membership and today's position in the social year cycle.
 
-Member renews → same card number maintained
-                new membership record for new year
+| Condition | Member status |
+|---|---|
+| Has `paid`/`waived` membership for current social year | `active` |
+| Has `pending` membership for current year, inside renewal window | `in_renewal` |
+| Has `pending` membership for current year, after renewal close | `not_renewed` |
+| Has `pending` membership for current year, after lapse date | `lapsed` |
+| Had `paid`/`waived` last year, before renewal opens | `active` |
+| Had `paid`/`waived` last year, inside renewal window | `in_renewal` |
+| Had `paid`/`waived` last year, after renewal close | `not_renewed` |
+| Had `paid`/`waived` last year, after lapse date | `lapsed` |
+| No recent valid membership | `lapsed` |
 
-Member lapses → members.membership_number = NULL
-                historical membership retains C00001
-                number available for reassignment
+The statuses `suspended`, `resigned`, and `deceased` are **never touched by the sync** — they are set manually and always take priority.
 
-Emergency deletion → all data removed including memberships
-```
+### Social year determination
+
+The social year is the year whose memberships are currently being managed. It advances to the next calendar year only after the lapse date has passed.
+
+The `renewal_open` date may belong to the previous calendar year (e.g. November opens renewals for the following year). This is determined by comparing `renewal_open` MM-DD with `renewal_close` MM-DD: if `open > close` as strings, the opening date belongs to `socialYear - 1`. This logic handles any configuration without arbitrary month thresholds.
+
+Examples:
+- Nov → Apr cycle: `'11-15' > '04-15'` → renewal_open is in socialYear - 1
+- Sep → Jun cycle: `'09-01' > '06-30'` → renewal_open is in socialYear - 1
+- Jan → Jun cycle: `'01-02' < '06-30'` → renewal_open is in socialYear itself
 
 ---
 
@@ -64,26 +75,26 @@ One row per member per year.
 | `id` | INT PK | |
 | `member_id` | INT FK → members | ON DELETE CASCADE |
 | `membership_number` | VARCHAR(10) NULL | Source of truth for card number |
-| `category_id` | INT FK → membership_categories | |
+| `category_id` | INT FK → membership_categories | Category belongs to the membership, not the member |
 | `year` | YEAR | Social year |
 | `fee` | DECIMAL(8,2) | Fee applied for this year |
 | `status` | ENUM | pending, paid, waived, cancelled |
 | `valid_from` | DATE | Start of validity |
-| `valid_until` | DATE | End of validity (usually 31 Dec) |
+| `valid_until` | DATE | End of validity |
 | `paid_on` | DATE NULL | Date payment was received |
 | `payment_method` | ENUM NULL | cash, bank_transfer, paypal, satispay, waived, other |
 | `payment_reference` | VARCHAR(255) NULL | Receipt number, bank transfer reference |
 | `notes` | TEXT NULL | Internal notes |
 
+Note: the category is linked to the membership record, not to the member. A member can have different categories in different years (e.g. Ordinary in 2024, Honorary in 2025).
+
 ### `reserved_member_numbers`
 
-Card numbers that must never be reassigned.
+Card numbers permanently reserved — never reassigned.
 
 | Column | Type | Notes |
 |---|---|---|
-| `id` | INT PK | |
 | `membership_number` | VARCHAR(20) UNIQUE | e.g. C00001 |
-| `reserved_at` | TIMESTAMP | |
 | `reserved_by` | INT | users.id — no FK, survives user deletion |
 | `reason` | VARCHAR(500) NULL | Motivation for reservation |
 
@@ -100,14 +111,16 @@ Card numbers that must never be reassigned.
 
 ---
 
-## Membership list
+## Available years for new membership
 
-URL: `memberships.php`
+The year select in the membership form is populated dynamically from two sources:
 
-Filters: year (default: current), status, category.
-Columns: Member No. | Surname Name | Category | Year | Card No. | Fee | Status | Paid on | Actions.
+1. Years present in `membership_category_fees` (years for which fees have been configured in settings)
+2. The current year — always included even without configured fees
 
-Both M and C numbers are displayed with their respective CSS badges.
+This means an admin should configure fees for a year before creating memberships for that year. The current year is always available as a fallback using the category default fee.
+
+Duplicate check: if a membership already exists for the selected member and year, the system blocks creation and shows a link to the existing record.
 
 ---
 
@@ -115,31 +128,13 @@ Both M and C numbers are displayed with their respective CSS badges.
 
 URL: `membership-new.php` or `membership-new.php?member_id=N`
 
-**Member selection**: live search field using `api/members-search.php`. Searches by name, surname, or member number (M00001). Minimum 2 characters, debounce 300ms. Results show name and M badge. If `?member_id` is present in the URL (arriving from member profile), the field is pre-filled.
-
-**Form fields**:
-
-*Membership box:*
-- Member (search or pre-filled)
-- Social year (current or next)
-- Card number (proposed automatically, editable)
-- Category (active categories only)
-- Fee (pre-filled from category, editable)
-- Status (default: pending)
-
-*Payment box (hidden if status = waived or cancelled):*
-- Payment method
-- Payment date (default: today)
-- Reference (receipt number, bank transfer reference)
-- Notes
-
-**Card number assignment**: `next_card_number()` finds `MAX(numeric part of membership_number)` across `members` and `reserved_member_numbers`, then returns prefix + (max + 1). The proposed number is shown with the `.badge-card-number` style and can be overridden by the admin.
+**Member selection**: live search field using `api/members-search.php`. Searches by name, surname, or member number (M00001). Minimum 2 characters, debounce 300ms.
 
 **After creation**:
-- If payment method is not "none": creates `payment_requests` and `payments` records, sets membership status to `paid`
+- If payment method is not "none": creates `payment_requests` and `payments` records, sets status to `paid`
 - If category `is_exempt_from_renewal = true`: sets status to `waived`
 - Updates `members.membership_number` with the new card number
-- Updates `members.status` to `active` if membership is paid or waived
+- Recalculates and updates `members.status` immediately for this specific member
 
 ---
 
@@ -149,130 +144,105 @@ URL: `membership-edit.php?id=N`
 
 **Normal edit** (admin and secretary): status, fee, payment date, payment method, notes.
 
-**Danger zone** (super_admin only) — UIkit accordion, closed by default:
-
-Each operation requires a mandatory motivation (min 10 characters) and is recorded in `audit_logs`.
+**Danger zone** (super_admin only) — UIkit accordion, closed by default. Each operation requires mandatory motivation (min 10 chars) and is recorded in `audit_logs`.
 
 | Operation | Description |
 |---|---|
-| Reserve card number | Permanently reserves the card number — never reassigned |
+| Reserve card number | Permanently reserves the card number — never reassigned. Saved to `reserved_member_numbers`. |
 | Change card number | Assigns a different available card number |
 | Force membership status | Changes status bypassing normal flow |
-| Correct paid fee | Fixes the recorded amount (insertion error correction) |
+| Correct paid fee | Fixes the recorded amount — use only for insertion errors |
 | Force member status | Changes the member's status bypassing the renewal cycle |
 
 ---
 
-## Member profile — membership history
+## Sync system
 
-In `member.php`, a "Membership history" section shows all memberships for the member ordered by year descending.
+The Sync system recalculates member statuses automatically. It runs once per day — triggered by the first login of the day. It can also be forced manually at any time via the navbar icon.
 
-Columns: Year | Card No. | Category | Fee | Status | Actions (Detail / Edit).
+### How it works
 
-Button "New membership for this member" links to `membership-new.php?member_id=N`.
+On every login, the system checks `system.last_sync_date` in settings. If the date differs from today, it redirects to `sync-run.php` which calls `sync.php?action=run` via AJAX, shows a spinner while processing, then redirects back to the page the user was on (or to dashboard).
+
+### sync.php endpoints
+
+| Action | Description |
+|---|---|
+| `?action=run` | Execute full recalculation for all members |
+| `?action=status` | Return current sync metadata as JSON |
+
+Response format:
+```json
+{
+  "ok": true,
+  "updated": 12,
+  "total": 105,
+  "duration_ms": 234,
+  "last_sync_date": "09/04/2026",
+  "is_synced": true
+}
+```
+
+### Sync navbar indicator
+
+The navbar shows a Lucide icon indicating the current sync state. Lucide is loaded via CDN in `layout.php`.
+
+| State | Icon | Colour |
+|---|---|---|
+| Synced today | `cloud-check` | Green (#28a745) |
+| Not yet synced | `cloud` | Orange (#fd7e14) |
+
+Clicking the icon triggers `sync-run.php?return={current_url}` — after sync the user returns to the page they were on.
+
+### Settings keys used by sync
+
+| Key | Description |
+|---|---|
+| `system.last_sync_date` | Date of last recalculation (Y-m-d) |
+| `system.last_sync_count` | Number of members updated in last sync |
+| `system.last_sync_duration_ms` | Duration of last sync in milliseconds |
+
+### Per-member immediate recalculation
+
+When a membership is created or its status changes, the system immediately recalculates the status for that specific member without waiting for the daily sync.
 
 ---
 
-## Internal API
+## calculate_member_status()
 
-The membership module uses and contributes to the internal API family in `public/api/`:
+Defined in `public/_init.php`. Takes a member record (with most recent membership data joined) and the full settings array. Returns the calculated status string.
 
-| Endpoint | Used by |
-|---|---|
-| `api/members-search.php?q=` | membership-new.php member search field |
-| `api/member.php?id=` | Pre-fill category after member selection |
+Members with status `suspended`, `resigned`, or `deceased` are excluded from sync — these statuses are never overwritten automatically.
 
 ---
 
-## Models
+## Internal API family
 
-**`app/Models/Membership.php`**
+All endpoints require authentication. All return JSON.
 
-| Method | Description |
-|---|---|
-| `findAll(array $filters, int $page, int $perPage)` | Paginated list with filters |
-| `findById(int $id)` | Single membership with member and category data |
-| `findByMember(int $memberId)` | All memberships for one member |
-| `getCurrentForMember(int $memberId)` | Current year membership for a member |
-| `create(array $data)` | Create membership, assign card number, update member |
-| `update(int $id, array $data)` | Update fields, sync member card number if current year |
-| `releaseCardNumber(int $memberId)` | Set members.membership_number = NULL on lapse |
-| `getNextAvailableNumber()` | Returns next available card number string |
-| `getYearsWithMemberships()` | Distinct years present in memberships |
-
-**`app/Models/Member.php`** (methods relevant to memberships)
-
-| Method | Description |
-|---|---|
-| `updateCardNumber(int $memberId, ?string $cardNumber)` | Update denormalized card number on member record |
+| Endpoint | Parameters | Used by |
+|---|---|---|
+| `api/members-search.php` | `?q=&limit=&status=` | Member search in forms |
+| `api/member.php` | `?id=` | Pre-fill form after member selection |
+| `api/members-list.php` | `?status=&category_id=&board=&year=&page=` | Filtered list for future modules |
+| `api/member-stats.php` | `?year=` | Aggregate statistics (cached 5 min) |
 
 ---
 
 ## CSS badges
 
-Two global CSS classes defined in `public/themes/uikit/layout.php`:
+Defined globally in `public/themes/uikit/layout.php`:
 
 ```css
-.badge-member-number {
-    font-family: monospace;
-    background: #E8F0FE;
-    color: #1A3A6B;
-    /* blue — permanent identifier */
-}
-
-.badge-card-number {
-    font-family: monospace;
-    background: #E6F4EA;
-    color: #1B5E2F;
-    /* green — active card */
-}
+.badge-member-number { font-family: monospace; background: #E8F0FE; color: #1A3A6B; }
+.badge-card-number   { font-family: monospace; background: #E6F4EA; color: #1B5E2F; }
 ```
-
-Usage in templates:
-```html
-<span class="badge-member-number">M00001</span>
-<span class="badge-card-number">C00001</span>
-```
-
----
-
-## Helper functions
-
-**`next_card_number(): string`**
-Generates the next available card number. Reads MAX from `members.membership_number` and `reserved_member_numbers`, returns prefix + (max + 1) zero-padded.
-
-**`format_member_number(?int $number): string`**
-Formats a raw integer as M00001. Returns `—` for null.
-
-**`format_card_number(?string $number): string`**
-Returns the card number string or `—` for null/empty.
-
-Prefix and digit count are configurable in settings:
-- `members.number_prefix` (default: M)
-- `members.card_prefix` (default: C)
-- `members.number_digits` (default: 5)
 
 ---
 
 ## Foreign key constraints
 
-All tables linked to `members` use `ON DELETE CASCADE`:
-
-| Table | Column | Behaviour on member delete |
-|---|---|---|
-| `memberships` | `member_id` | CASCADE — deleted |
-| `payments` | `member_id` | CASCADE — deleted |
-| `payment_requests` | `member_id` | CASCADE — deleted |
-| `payments` | `payment_request_id` | CASCADE — deleted |
-| `assembly_attendees` | `member_id` | CASCADE — deleted |
-| `assembly_delegates` | `delegator_member_id` | CASCADE — deleted |
-| `assembly_delegates` | `delegate_member_id` | CASCADE — deleted |
-| `communication_recipients` | `member_id` | CASCADE — deleted |
-| `gdpr_consents` | `member_id` | CASCADE — deleted |
-| `event_registrations` | `member_id` | CASCADE — deleted |
-| `event_registrations` | `payment_request_id` | SET NULL |
-
-Emergency deletion is the only operation that triggers these cascades. Normal operations never delete member records.
+All tables linked to `members` use `ON DELETE CASCADE`. Emergency deletion of a member triggers all cascades in a single transaction, removing all linked records including memberships, payments, and payment requests.
 
 ---
 
@@ -280,7 +250,8 @@ Emergency deletion is the only operation that triggers these cascades. Normal op
 
 | File | Description |
 |---|---|
-| `013_memberships_indexes.sql` | Added indexes, payment_method and payment_reference columns |
-| `014_membership_number_restructure.sql` | Added membership_number to memberships, M/C format, settings prefixes |
-| `015_fix_membership_number_nullable.sql` | Made memberships.membership_number nullable |
-| `016_cascade_foreign_keys.sql` | Added ON DELETE CASCADE to all member-linked FK constraints |
+| `013_memberships_indexes.sql` | Indexes, payment_method, payment_reference columns |
+| `014_membership_number_restructure.sql` | membership_number in memberships, M/C format, prefix settings |
+| `015_fix_membership_number_nullable.sql` | membership_number nullable in memberships |
+| `016_cascade_foreign_keys.sql` | ON DELETE CASCADE on all member-linked FK constraints |
+| `017_member_status_sync.sql` | email nullable on members, remove category_id from members, sync settings keys |
