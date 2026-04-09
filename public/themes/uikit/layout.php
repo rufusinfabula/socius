@@ -30,6 +30,7 @@
     -->
     <title><?= htmlspecialchars((string) ($pageTitle ?? \Socius\Core\Config::get('app.name', 'Socius')), ENT_QUOTES, 'UTF-8') ?> — <?= htmlspecialchars((string) \Socius\Core\Config::get('app.name', 'Socius'), ENT_QUOTES, 'UTF-8') ?></title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/uikit@3/dist/css/uikit.min.css">
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
     <?php if (!empty($pageHead)) echo $pageHead; ?>
     <style>
         .uk-sidebar { min-height: calc(100vh - 80px); background: #f8f8f8; border-right: 1px solid #e5e5e5; }
@@ -119,27 +120,28 @@
             <li>
                 <?php
                 try {
-                    $lastSync  = \Socius\Models\Setting::get('system.last_sync_date', '');
-                    $isSynced  = ($lastSync === date('Y-m-d'));
-                    $syncColor = $isSynced ? '#28a745' : '#fd7e14';
-                    $syncTitle = $isSynced
-                        ? 'Sincronizzato oggi — clicca per forzare sync'
-                        : 'Non sincronizzato oggi — clicca per sincronizzare';
+                    $lastSync = \Socius\Models\Setting::get('system.last_sync_date', '');
+                    $isSynced = ($lastSync === date('Y-m-d'));
                 } catch (\Throwable) {
-                    $syncColor = '#fd7e14';
-                    $syncTitle = 'Sync';
+                    $isSynced = false;
                 }
-                $currentUri = htmlspecialchars(
-                    $_SERVER['REQUEST_URI'] ?? 'dashboard.php',
-                    ENT_QUOTES, 'UTF-8'
-                );
+                $syncReturnUri = urlencode($_SERVER['REQUEST_URI'] ?? '/');
                 ?>
-                <a href="sync-run.php?return=<?= $currentUri ?>"
-                   title="<?= htmlspecialchars($syncTitle, ENT_QUOTES, 'UTF-8') ?>"
-                   style="color:<?= $syncColor ?>;padding:0 8px;display:flex;align-items:center"
+                <?php if ($isSynced): ?>
+                <a href="sync-run.php?return=<?= $syncReturnUri ?>"
+                   title="Sincronizzato oggi — clicca per forzare sync"
+                   style="color:#28a745;padding:0 8px;display:inline-flex;align-items:center"
                    uk-tooltip>
-                    <span uk-icon="icon: refresh; ratio: 1.1"></span>
+                    <i data-lucide="cloud-check" style="width:20px;height:20px"></i>
                 </a>
+                <?php else: ?>
+                <a href="sync-run.php?return=<?= $syncReturnUri ?>"
+                   title="Non sincronizzato oggi — clicca per sincronizzare"
+                   style="color:#fd7e14;padding:0 8px;display:inline-flex;align-items:center"
+                   uk-tooltip>
+                    <i data-lucide="cloud" style="width:20px;height:20px"></i>
+                </a>
+                <?php endif; ?>
             </li>
             <?php endif; ?>
             <li>
@@ -219,5 +221,8 @@
 
 <script src="https://cdn.jsdelivr.net/npm/uikit@3/dist/js/uikit.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/uikit@3/dist/js/uikit-icons.min.js"></script>
+<script>
+    if (typeof lucide !== 'undefined') { lucide.createIcons(); }
+</script>
 </body>
 </html>

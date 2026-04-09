@@ -16,9 +16,10 @@ require_once __DIR__ . '/_init.php';
 
 requireAuth();
 
-// URL di ritorno (validato: solo path relativo nel dominio corrente)
+// URL di ritorno: accettato solo se inizia con '/' (path assoluto interno).
+// Qualsiasi altro valore (vuoto, URL esterno, path relativo) → dashboard.php.
 $returnUrl = trim((string) ($_GET['return'] ?? ''));
-if ($returnUrl === '' || !preg_match('~^[a-zA-Z0-9/_\-.?&=%#+]+$~', $returnUrl)) {
+if ($returnUrl === '' || $returnUrl[0] !== '/') {
     $returnUrl = 'dashboard.php';
 }
 ?>

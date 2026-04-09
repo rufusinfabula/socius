@@ -499,24 +499,27 @@ function calculate_member_status(array $member, array $settings): string
     $renewalClose = $buildDate($closeMmdd, $socialYear);
     $lapse        = $buildDate($lapseMmdd, $socialYear);
 
-    // Check for paid/waived membership for the current social year
+    $validStatuses = ['paid', 'waived'];
+
+    // paid = pagamento ricevuto; waived = quota condonata per delibera.
+    // Entrambi equivalenti ai fini del ciclo di rinnovo.
     $hasCurrentYear = !empty($member['membership_year'])
         && (int) $member['membership_year'] === $socialYear
-        && in_array($member['membership_status'] ?? '', ['paid', 'waived'], true);
+        && in_array($member['membership_status'] ?? '', $validStatuses, true);
 
-    // Check for paid/waived membership for the previous social year
     $hasPreviousYear = !empty($member['membership_year'])
         && (int) $member['membership_year'] === ($socialYear - 1)
-        && in_array($member['membership_status'] ?? '', ['paid', 'waived'], true);
+        && in_array($member['membership_status'] ?? '', $validStatuses, true);
 
     if ($hasCurrentYear) {
-        if ($today >= $renewalOpen && $today <= $renewalClose) {
-            return 'in_renewal';
-        }
+        // Ha tessera valida per l'anno corrente → sempre active.
+        // in_renewal si applica solo a chi NON ha ancora rinnovato.
         return 'active';
     }
 
     if ($hasPreviousYear) {
+        // Ha rinnovato l'anno scorso ma non ancora quest'anno.
+        // Lo status dipende dalla posizione nel ciclo di rinnovo.
         if ($today < $renewalOpen) {
             return 'active';
         }
