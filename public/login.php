@@ -75,6 +75,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         User::updateLastLogin((int) $user['id'], $ip);
                     } catch (\Throwable) {}
 
+                    // Sync al primo login del giorno
+                    try {
+                        $lastSync = \Socius\Models\Setting::get('system.last_sync_date', '');
+                        if ($lastSync !== date('Y-m-d')) {
+                            redirect('sync-run.php?return=dashboard.php');
+                        }
+                    } catch (\Throwable) {}
+
                     redirect('dashboard.php');
                 }
             }

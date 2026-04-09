@@ -41,7 +41,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'birth_date'  => ($_POST['birth_date'] ?? '') ?: null,
             'birth_place' => trim((string) ($_POST['birth_place'] ?? '')),
             'fiscal_code' => strtoupper(trim((string) ($_POST['fiscal_code'] ?? ''))) ?: null,
-            'email'       => trim((string) ($_POST['email'] ?? '')),
+            'email'       => trim((string) ($_POST['email'] ?? '')) ?: null,
             'phone1'      => trim((string) ($_POST['phone1'] ?? '')),
             'phone2'      => trim((string) ($_POST['phone2'] ?? '')),
             'address'     => trim((string) ($_POST['address'] ?? '')),
@@ -50,7 +50,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'province'    => strtoupper(trim((string) ($_POST['province'] ?? ''))),
             'country'     => strtoupper(trim((string) ($_POST['country'] ?? 'IT'))),
             'status'      => (string) ($_POST['status'] ?? 'active'),
-            'category_id' => ($_POST['category_id'] ?? '') !== '' ? (int) $_POST['category_id'] : null,
             'joined_on'   => ($_POST['joined_on'] ?? '') ?: date('Y-m-d'),
             'resigned_on' => ($_POST['resigned_on'] ?? '') ?: null,
             'notes'       => (int) ($currentUser['role_id'] ?? 4) <= 3
@@ -58,8 +57,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 : '',
         ];
 
-        if ($data['surname'] === '' || $data['name'] === '' || $data['email'] === '') {
-            $error    = 'Cognome, nome ed email sono obbligatori.';
+        if ($data['surname'] === '' || $data['name'] === '') {
+            $error    = 'Cognome e nome sono obbligatori.';
             $formData = $data;
         } else {
             try {

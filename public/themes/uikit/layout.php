@@ -115,6 +115,33 @@
     </div>
     <div class="uk-navbar-right uk-margin-right">
         <ul class="uk-navbar-nav">
+            <?php if (!empty($_SESSION['auth_user_id'])): ?>
+            <li>
+                <?php
+                try {
+                    $lastSync  = \Socius\Models\Setting::get('system.last_sync_date', '');
+                    $isSynced  = ($lastSync === date('Y-m-d'));
+                    $syncColor = $isSynced ? '#28a745' : '#fd7e14';
+                    $syncTitle = $isSynced
+                        ? 'Sincronizzato oggi — clicca per forzare sync'
+                        : 'Non sincronizzato oggi — clicca per sincronizzare';
+                } catch (\Throwable) {
+                    $syncColor = '#fd7e14';
+                    $syncTitle = 'Sync';
+                }
+                $currentUri = htmlspecialchars(
+                    $_SERVER['REQUEST_URI'] ?? 'dashboard.php',
+                    ENT_QUOTES, 'UTF-8'
+                );
+                ?>
+                <a href="sync-run.php?return=<?= $currentUri ?>"
+                   title="<?= htmlspecialchars($syncTitle, ENT_QUOTES, 'UTF-8') ?>"
+                   style="color:<?= $syncColor ?>;padding:0 8px;display:flex;align-items:center"
+                   uk-tooltip>
+                    <span uk-icon="icon: refresh; ratio: 1.1"></span>
+                </a>
+            </li>
+            <?php endif; ?>
             <li>
                 <a href="logout.php" class="uk-button uk-button-default uk-button-small">
                     <span uk-icon="sign-out"></span> Esci

@@ -438,3 +438,80 @@ function next_card_number(): string
     $next = max($maxMembers, $maxMemberships, $maxReserved) + 1;
     return $prefix . str_pad((string) $next, $digits, '0', STR_PAD_LEFT);
 }
+
+/**
+ * Calculate the expected member status based on their most recent membership
+ * and the social year cycle dates from settings.
+ *
+ * Override statuses (never touched by sync): suspended, resigned, deceased.
+ *
+ * Logic:
+ * 1. If member has paid/waived membership for current year:
+ *    - If today is between renewal_open and renewal_close → in_renewal
+ *    - Otherwise → active
+ * 2. If member had a paid/waived membership last year but not this year:
+ *    - If today < renewal_open → active (last year still valid)
+ *    - If today between renewal_open and renewal_close → in_renewal
+ *    - If today between renewal_close and lapse → not_renewed
+ *    - If today >= lapse → lapsed
+ * 3. No recent memberships → lapsed
+ *
+ * @param array $member   Member record; must include: status, membership_year, membership_status
+ * @param array $settings Flat key→value array from the settings table (dot-notation keys)
+ * @return string         New status value
+ */
+function calculate_member_status(array $member, array $settings): string
+{
+    // Never touch these statuses
+    $overrides = ['suspended', 'resigned', 'deceased'];
+    if (in_array($member['status'] ?? '', $overrides, true)) {
+        return (string) $member['status'];
+    }
+
+    $today    = new DateTimeImmutable('today');
+    $thisYear = (int) $today->format('Y');
+
+    // Parse renewal dates — stored as MM-DD in settings
+    $parseDate = static function (string $mmdd, int $year): DateTimeImmutable {
+        [$m, $d] = explode('-', $mmdd);
+        return new DateTimeImmutable(
+            sprintf('%04d-%02d-%02d', $year, (int) $m, (int) $d)
+        );
+    };
+
+    $renewalOpen  = $parseDate((string) ($settings['renewal.date_open']  ?? '11-15'), $thisYear - 1);
+    $renewalClose = $parseDate((string) ($settings['renewal.date_close'] ?? '04-15'), $thisYear);
+    $lapse        = $parseDate((string) ($settings['renewal.date_lapse'] ?? '12-31'), $thisYear);
+
+    // Check for paid/waived membership this year
+    $hasThisYear = !empty($member['membership_year'])
+        && (int) $member['membership_year'] === $thisYear
+        && in_array($member['membership_status'] ?? '', ['paid', 'waived'], true);
+
+    // Check for paid/waived membership last year
+    $hasLastYear = !empty($member['membership_year'])
+        && (int) $member['membership_year'] === ($thisYear - 1)
+        && in_array($member['membership_status'] ?? '', ['paid', 'waived'], true);
+
+    if ($hasThisYear) {
+        if ($today >= $renewalOpen && $today <= $renewalClose) {
+            return 'in_renewal';
+        }
+        return 'active';
+    }
+
+    if ($hasLastYear) {
+        if ($today < $renewalOpen) {
+            return 'active';
+        }
+        if ($today <= $renewalClose) {
+            return 'in_renewal';
+        }
+        if ($today <= $lapse) {
+            return 'not_renewed';
+        }
+        return 'lapsed';
+    }
+
+    return 'lapsed';
+}

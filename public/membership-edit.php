@@ -108,6 +108,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     client_ip()
                 );
 
+                // Ricalcola lo status del socio se è cambiato lo status della tessera
+                if (($oldValues['status'] ?? '') !== $status) {
+                    try {
+                        $settingsRows = $db->fetchAll('SELECT `key`, `value` FROM `settings`');
+                        $settings     = array_column($settingsRows, 'value', 'key');
+                        $memberId2    = (int) ($membership['member_id'] ?? 0);
+                        $freshMember  = $db->fetch(
+                            'SELECT id, status FROM members WHERE id = ? LIMIT 1',
+                            [$memberId2]
+                        );
+                        if ($freshMember) {
+                            $freshMember['membership_year']   = (int) ($membership['year'] ?? 0);
+                            $freshMember['membership_status'] = $status;
+                            $calcStatus = calculate_member_status($freshMember, $settings);
+                            if ($calcStatus !== (string) ($freshMember['status'] ?? '')) {
+                                $db->update('members', ['status' => $calcStatus], ['id' => $memberId2]);
+                            }
+                        }
+                    } catch (\Throwable) {}
+                }
+
                 flash_set('success', __('memberships.updated_ok'));
                 redirect('membership.php?id=' . $id);
             } catch (\Throwable) {
@@ -207,6 +228,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         ['status' => $newStatus, 'motivation' => $motivation],
                         $ip
                     );
+                    // Ricalcola lo status del socio
+                    try {
+                        $settingsRows2 = $db->fetchAll('SELECT `key`, `value` FROM `settings`');
+                        $settings2     = array_column($settingsRows2, 'value', 'key');
+                        $memberId3     = (int) ($membership['member_id'] ?? 0);
+                        $freshMember3  = $db->fetch(
+                            'SELECT id, status FROM members WHERE id = ? LIMIT 1',
+                            [$memberId3]
+                        );
+                        if ($freshMember3) {
+                            $freshMember3['membership_year']   = (int) ($membership['year'] ?? 0);
+                            $freshMember3['membership_status'] = $newStatus;
+                            $calcStatus3 = calculate_member_status($freshMember3, $settings2);
+                            if ($calcStatus3 !== (string) ($freshMember3['status'] ?? '')) {
+                                $db->update('members', ['status' => $calcStatus3], ['id' => $memberId3]);
+                            }
+                        }
+                    } catch (\Throwable) {}
                     break;
 
                 case 'change_fee':

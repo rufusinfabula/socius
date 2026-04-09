@@ -33,6 +33,15 @@ $content = (function () use (
     $isStaff      = (int) ($currentUser['role_id'] ?? 4) <= 3;
     $s = $member['status'] ?? 'active';
     $statusText = __('members.status_' . $s);
+
+    // Categoria dalla tessera più recente paid/waived
+    $_currentCategory = '';
+    foreach ($memberships as $_ms) {
+        if (in_array($_ms['status'] ?? '', ['paid', 'waived'], true)) {
+            $_currentCategory = $_ms['category_name'] ?? '';
+            break;
+        }
+    }
     ?>
 
     <!-- Breadcrumb -->
@@ -64,8 +73,8 @@ $content = (function () use (
                         <?= $e(format_card_number($member['membership_number'])) ?>
                     </span>
                     <?php endif; ?>
-                    <?php if (!empty($member['category_name'])): ?>
-                        &nbsp;·&nbsp; <?= $e($member['category_name']) ?>
+                    <?php if ($_currentCategory !== ''): ?>
+                        &nbsp;·&nbsp; <?= $e($_currentCategory) ?>
                     <?php endif; ?>
                     &nbsp;·&nbsp; <?= $e(__('members.joined_on')) ?>: <?= $e(format_date($member['joined_on'] ?? '')) ?>
                 </p>
@@ -236,11 +245,11 @@ $content = (function () use (
                     <p class="uk-margin-remove-top"><?= $e(format_date($member['joined_on'] ?? '')) ?></p>
                 </div>
 
-                <!-- Categoria -->
-                <?php if (!empty($member['category_name'])): ?>
+                <!-- Categoria (dalla tessera più recente paid/waived) -->
+                <?php if ($_currentCategory !== ''): ?>
                 <div class="uk-margin">
                     <p class="uk-text-muted uk-text-small uk-margin-remove-bottom"><?= $e(__('members.category')) ?></p>
-                    <p class="uk-margin-remove-top"><?= $e($member['category_name']) ?></p>
+                    <p class="uk-margin-remove-top"><?= $e($_currentCategory) ?></p>
                 </div>
                 <?php endif; ?>
 

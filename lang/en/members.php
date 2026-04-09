@@ -275,4 +275,13 @@ return [
     'delete_forbidden'           => 'Only the super administrator can perform this operation.',
     'delete_csrf_invalid'        => 'Invalid security token. Reload the page.',
 
+    // -------------------------------------------------------------------------
+    // Member status sync
+    // -------------------------------------------------------------------------
+    'sync_running'     => 'Syncing...',
+    'sync_done'        => 'Sync complete',
+    'sync_updated'     => ':count members updated',
+    'sync_title_ok'    => 'Synced today',
+    'sync_title_no'    => 'Not synced today',
+
 ];

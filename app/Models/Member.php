@@ -50,11 +50,6 @@ class Member extends BaseModel
             $params[] = $filters['status'];
         }
 
-        if (!empty($filters['category'])) {
-            $where[]  = 'm.category_id = ?';
-            $params[] = (int) $filters['category'];
-        }
-
         if (!empty($filters['search'])) {
             $like     = '%' . $filters['search'] . '%';
             $where[]  = '(m.name LIKE ? OR m.surname LIKE ? OR m.email LIKE ? OR m.membership_number LIKE ?)';
@@ -73,9 +68,8 @@ class Member extends BaseModel
 
         $offset = ($page - 1) * $perPage;
         $items  = self::db()->fetchAll(
-            "SELECT m.*, mc.label AS category_name
+            "SELECT m.*
                FROM members m
-               LEFT JOIN membership_categories mc ON mc.id = m.category_id
                {$whereClause}
                ORDER BY m.surname ASC, m.name ASC
                LIMIT ? OFFSET ?",
@@ -99,9 +93,8 @@ class Member extends BaseModel
     public static function findById(int $id): ?array
     {
         $row = self::db()->fetch(
-            'SELECT m.*, mc.label AS category_name
+            'SELECT m.*
                FROM members m
-               LEFT JOIN membership_categories mc ON mc.id = m.category_id
               WHERE m.id = ?
               LIMIT 1',
             [$id]
@@ -149,9 +142,8 @@ class Member extends BaseModel
     {
         $like = '%' . $query . '%';
         return self::db()->fetchAll(
-            'SELECT m.*, mc.label AS category_name
+            'SELECT m.*
                FROM members m
-               LEFT JOIN membership_categories mc ON mc.id = m.category_id
               WHERE m.name LIKE ? OR m.surname LIKE ? OR m.email LIKE ? OR m.membership_number LIKE ?
               ORDER BY m.surname ASC, m.name ASC
               LIMIT 50',

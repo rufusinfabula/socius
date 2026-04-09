@@ -69,7 +69,7 @@ return [
     'status_active'        => 'Attivo',
     'status_in_renewal'    => 'In rinnovo',
     'status_not_renewed'   => 'Non rinnovato',
-    'status_lapsed'        => 'Decaduto',
+    'status_lapsed'        => 'Scaduto',
     'status_suspended'     => 'Sospeso',
     'status_resigned'      => 'Dimesso',
     'status_deceased'      => 'Deceduto',
@@ -274,5 +274,14 @@ return [
     'delete_wrong_confirm'       => 'La parola di conferma non è corretta. Digita DELETE (maiuscolo).',
     'delete_forbidden'           => 'Solo il super amministratore può eseguire questa operazione.',
     'delete_csrf_invalid'        => 'Token di sicurezza non valido. Ricarica la pagina.',
+
+    // -------------------------------------------------------------------------
+    // Sync status soci
+    // -------------------------------------------------------------------------
+    'sync_running'     => 'Sincronizzazione in corso...',
+    'sync_done'        => 'Sincronizzazione completata',
+    'sync_updated'     => ':count soci aggiornati',
+    'sync_title_ok'    => 'Sincronizzato oggi',
+    'sync_title_no'    => 'Non sincronizzato oggi',
 
 ];

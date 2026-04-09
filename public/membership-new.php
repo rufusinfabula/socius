@@ -238,6 +238,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     return $membershipId;
                 });
 
+                // Ricalcola lo status del solo socio coinvolto
+                try {
+                    $settingsRows = $db->fetchAll('SELECT `key`, `value` FROM `settings`');
+                    $settings     = array_column($settingsRows, 'value', 'key');
+                    $freshMember  = $db->fetch(
+                        'SELECT id, status FROM members WHERE id = ? LIMIT 1',
+                        [$memberId]
+                    );
+                    $freshMs = $db->fetch(
+                        'SELECT year, status FROM memberships WHERE id = ? LIMIT 1',
+                        [$newMembershipId]
+                    );
+                    if ($freshMember && $freshMs) {
+                        $freshMember['membership_year']   = (int) $freshMs['year'];
+                        $freshMember['membership_status'] = $freshMs['status'];
+                        $calcStatus = calculate_member_status($freshMember, $settings);
+                        if ($calcStatus !== (string) ($freshMember['status'] ?? '')) {
+                            $db->update('members', ['status' => $calcStatus], ['id' => $memberId]);
+                        }
+                    }
+                } catch (\Throwable) {}
+
                 flash_set('success', __('memberships.created_ok'));
                 redirect('membership.php?id=' . $newMembershipId);
             }

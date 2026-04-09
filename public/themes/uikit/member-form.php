@@ -220,29 +220,6 @@ $content = (function () use (
                     </div>
                     <?php endif; ?>
 
-                    <!-- Categoria (required) -->
-                    <?php if (!empty($categories)): ?>
-                    <div class="uk-margin">
-                        <label class="uk-form-label" for="category_id"><?= $e(__('members.category')) ?> *</label>
-                        <select class="uk-select" id="category_id" name="category_id" required>
-                            <option value=""><?= $e(__('members.select_category')) ?></option>
-                            <?php foreach ($categories as $cat): ?>
-                                <option value="<?= (int) $cat['id'] ?>"
-                                    <?= (int) ($member['category_id'] ?? 0) === (int) $cat['id'] ? 'selected' : '' ?>>
-                                    <?= $e($cat['label']) ?><?= ((float) ($cat['annual_fee'] ?? 0) > 0) ? ' (€ ' . number_format((float) $cat['annual_fee'], 2, ',', '.') . ')' : '' ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-                    <?php else: ?>
-                    <div class="uk-margin">
-                        <label class="uk-form-label"><?= $e(__('members.category')) ?></label>
-                        <p class="uk-text-muted uk-text-small">
-                            <?= $e(__('members.no_categories_available')) ?>
-                        </p>
-                    </div>
-                    <?php endif; ?>
-
                     <!-- Status (staff only) -->
                     <?php if ($isStaff): ?>
                     <div class="uk-margin">
@@ -296,9 +273,9 @@ $content = (function () use (
                 <!-- Colonna sinistra: contatti -->
                 <div class="uk-width-1-2@m">
                     <div class="uk-margin">
-                        <label class="uk-form-label" for="email"><?= $e(__('members.email')) ?> *</label>
+                        <label class="uk-form-label" for="email"><?= $e(__('members.email')) ?></label>
                         <input class="uk-input" type="email" id="email" name="email"
-                               value="<?= $v('email') ?>" required autocomplete="email">
+                               value="<?= $v('email') ?>" autocomplete="email">
                     </div>
                     <div class="uk-margin">
                         <label class="uk-form-label" for="phone1"><?= $e(__('members.phone1')) ?></label>
