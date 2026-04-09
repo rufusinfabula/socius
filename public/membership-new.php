@@ -18,6 +18,20 @@ $currentUser = current_user();
 $db          = Database::getInstance();
 $currentYear = (int) date('Y');
 
+// Anni disponibili: anni con quote configurate + anno corrente
+$availableYears = [];
+try {
+    $rows = $db->fetchAll(
+        'SELECT DISTINCT year
+           FROM membership_category_fees
+          UNION
+         SELECT YEAR(CURDATE()) AS year
+          ORDER BY year DESC'
+    );
+    $availableYears = array_map('intval', array_column($rows, 'year'));
+} catch (\Throwable) {}
+$availableYears = $availableYears ?: [$currentYear];
+
 // Pre-fill from ?member_id=N
 $preMemberId = (int) ($_GET['member_id'] ?? 0);
 $preMember   = null;
@@ -82,7 +96,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Validation
     if ($memberId <= 0) {
         $error = __('memberships.error_member_required');
-    } elseif ($year < 2000 || $year > 2100) {
+    } elseif (!in_array($year, $availableYears, true)) {
         $error = __('memberships.error_year_required');
     } elseif ($categoryId <= 0) {
         $error = __('memberships.error_category_required');
@@ -108,7 +122,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 [$memberId, $year]
             );
             if ($existing !== false) {
-                $error = __('memberships.error_duplicate');
+                $error = str_replace(':year', (string) $year, __('memberships.duplicate_year'));
             } else {
                 // Validate / assign card number
                 if ($cardNumber !== '') {
@@ -279,16 +293,17 @@ foreach ($categories as $cat) {
 }
 
 theme('membership-form', [
-    'activeNav'    => 'memberships',
-    'currentUser'  => $currentUser,
-    'isEdit'       => false,
-    'membership'   => $formData,
-    'preMember'    => $preMember,
-    'categories'   => $categories,
-    'categoryFees' => $categoryFees,
-    'nextNumber'   => $nextNumber,
-    'currentYear'  => $currentYear,
-    'error'        => $error,
-    'flashSuccess' => flash_get('success'),
-    'flashError'   => flash_get('error'),
+    'activeNav'      => 'memberships',
+    'currentUser'    => $currentUser,
+    'isEdit'         => false,
+    'membership'     => $formData,
+    'preMember'      => $preMember,
+    'categories'     => $categories,
+    'categoryFees'   => $categoryFees,
+    'nextNumber'     => $nextNumber,
+    'currentYear'    => $currentYear,
+    'availableYears' => $availableYears,
+    'error'          => $error,
+    'flashSuccess'   => flash_get('success'),
+    'flashError'     => flash_get('error'),
 ]);

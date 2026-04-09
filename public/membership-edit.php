@@ -45,6 +45,20 @@ try {
     );
 } catch (\Throwable) {}
 
+// Anni disponibili: anni con quote configurate + anno corrente
+$availableYears = [];
+try {
+    $rows = $db->fetchAll(
+        'SELECT DISTINCT year
+           FROM membership_category_fees
+          UNION
+         SELECT YEAR(CURDATE()) AS year
+          ORDER BY year DESC'
+    );
+    $availableYears = array_map('intval', array_column($rows, 'year'));
+} catch (\Throwable) {}
+$availableYears = $availableYears ?: [(int) date('Y')];
+
 // Category fees for JS
 $categoryFees = [];
 foreach ($categories as $cat) {
@@ -307,18 +321,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 theme('membership-form', [
-    'activeNav'    => 'memberships',
-    'currentUser'  => $currentUser,
-    'isEdit'       => true,
-    'isSuperAdmin' => $isSuperAdmin,
-    'membership'   => $membership,
-    'preMember'    => null,
-    'categories'   => $categories,
-    'categoryFees' => $categoryFees,
+    'activeNav'      => 'memberships',
+    'currentUser'    => $currentUser,
+    'isEdit'         => true,
+    'isSuperAdmin'   => $isSuperAdmin,
+    'membership'     => $membership,
+    'preMember'      => null,
+    'categories'     => $categories,
+    'categoryFees'   => $categoryFees,
     // membership_number from the ms.* row is the source of truth for this card
-    'nextNumber'   => (string) ($membership['membership_number'] ?? ''),
-    'currentYear'  => (int) date('Y'),
-    'error'        => $error,
-    'flashSuccess' => flash_get('success'),
-    'flashError'   => flash_get('error'),
+    'nextNumber'     => (string) ($membership['membership_number'] ?? ''),
+    'currentYear'    => (int) date('Y'),
+    'availableYears' => $availableYears,
+    'error'          => $error,
+    'flashSuccess'   => flash_get('success'),
+    'flashError'     => flash_get('error'),
 ]);

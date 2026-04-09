@@ -45,7 +45,7 @@ $catFeesJson = json_encode($categoryFees ?? [], JSON_FORCE_OBJECT);
 
 $content = (function () use (
     $ms, $v, $isEdit, $heading, $currentUser, $isSuperAdmin,
-    $preMember, $categories, $nextNumber, $currentYear,
+    $preMember, $categories, $nextNumber, $currentYear, $availableYears,
     $statusOptions, $memberStatusOptions, $methodOptions,
     $catFeesJson, $error, $e
 ): string {
@@ -168,9 +168,18 @@ $content = (function () use (
                         <?php else: ?>
                         <select id="year" name="year" class="uk-select" required>
                             <option value=""><?= $e(__('memberships.select_year')) ?></option>
-                            <?php foreach ([$currentYear, $currentYear + 1] as $yr): ?>
+                            <?php foreach ($availableYears as $yr):
+                                $yr = (int) $yr;
+                                if ($yr === $currentYear) {
+                                    $label = $yr . ' — ' . __('memberships.year_current');
+                                } elseif ($yr > $currentYear) {
+                                    $label = $yr . ' — ' . __('memberships.year_future');
+                                } else {
+                                    $label = $yr . ' — ' . __('memberships.year_past');
+                                }
+                            ?>
                             <option value="<?= $yr ?>" <?= (int) $v('year', $currentYear) === $yr ? 'selected' : '' ?>>
-                                <?= $yr ?>
+                                <?= $e($label) ?>
                             </option>
                             <?php endforeach; ?>
                         </select>

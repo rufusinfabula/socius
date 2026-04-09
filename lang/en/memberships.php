@@ -162,4 +162,10 @@ return [
     'dangerous_forbidden'              => 'Only the super administrator can perform this operation.',
     'dangerous_execute'                => 'Execute operation',
 
+    // Available years
+    'year_current'                     => 'Current year',
+    'year_future'                      => 'Future year',
+    'year_past'                        => 'Past year',
+    'duplicate_year'                   => 'A membership already exists for this member for year :year.',
+
 ];

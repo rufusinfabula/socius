@@ -162,4 +162,10 @@ return [
     'dangerous_forbidden'              => 'Solo il super amministratore può eseguire questa operazione.',
     'dangerous_execute'                => 'Esegui operazione',
 
+    // Anni disponibili
+    'year_current'                     => 'Anno corrente',
+    'year_future'                      => 'Anno futuro',
+    'year_past'                        => 'Anno passato',
+    'duplicate_year'                   => 'Esiste già una tessera per questo socio per l\'anno :year.',
+
 ];
