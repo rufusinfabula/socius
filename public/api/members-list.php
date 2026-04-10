@@ -49,12 +49,15 @@ requireAuth();
 
 header('Content-Type: application/json');
 
+// Single status (backward compat) or multiple via statuses[]
 $status     = trim((string) ($_GET['status'] ?? ''));
+$statusesRaw = isset($_GET['statuses']) ? (array) $_GET['statuses'] : [];
+$statuses   = array_values(array_filter(array_map('trim', $statusesRaw)));
 $categoryId = (int) ($_GET['category_id'] ?? 0);
 $board      = filter_var($_GET['board'] ?? false, FILTER_VALIDATE_BOOLEAN);
 $year       = (int) ($_GET['year'] ?? 0);
 $page       = max(1, (int) ($_GET['page'] ?? 1));
-$perPage    = min(100, max(1, (int) ($_GET['per_page'] ?? 25)));
+$perPage    = min(500, max(1, (int) ($_GET['per_page'] ?? 25)));
 $q          = trim((string) ($_GET['q'] ?? ''));
 
 try {
@@ -62,13 +65,18 @@ try {
     $where  = [];
     $params = [];
 
-    if ($status !== '') {
+    if ($statuses) {
+        $ph      = implode(',', array_fill(0, count($statuses), '?'));
+        $where[] = "m.status IN ($ph)";
+        $params  = array_merge($params, $statuses);
+    } elseif ($status !== '') {
         $where[]  = 'm.status = ?';
         $params[] = $status;
     }
 
     if ($categoryId > 0) {
-        $where[]  = 'm.category_id = ?';
+        // category_id was dropped from members in migration 021 — filter via memberships
+        $where[]  = 'EXISTS (SELECT 1 FROM memberships ms2 WHERE ms2.member_id = m.id AND ms2.category_id = ?)';
         $params[] = $categoryId;
     }
 
@@ -101,10 +109,12 @@ try {
     $rows   = $db->fetchAll(
         "SELECT m.id, m.member_number, m.membership_number,
                 m.name, m.surname, m.email, m.status,
-                m.category_id, mc.label AS category_label,
-                m.joined_on
+                m.joined_on,
+                (SELECT mc.label FROM memberships ms3
+                   JOIN membership_categories mc ON mc.id = ms3.category_id
+                  WHERE ms3.member_id = m.id
+                  ORDER BY ms3.year DESC LIMIT 1) AS category_label
            FROM members m
-           LEFT JOIN membership_categories mc ON mc.id = m.category_id
            {$whereClause}
            ORDER BY m.surname ASC, m.name ASC
            LIMIT ? OFFSET ?",
@@ -119,10 +129,9 @@ try {
             'membership_number'=> (string) ($row['membership_number'] ?? ''),
             'name'             => (string) $row['name'],
             'surname'          => (string) $row['surname'],
-            'email'            => (string) $row['email'],
+            'email'            => (string) ($row['email'] ?? ''),
             'status'           => $status,
             'status_label'     => (string) __('members.status_' . $status),
-            'category_id'      => $row['category_id'] ? (int) $row['category_id'] : null,
             'category_label'   => (string) ($row['category_label'] ?? ''),
             'joined_on'        => $row['joined_on'] ? format_date((string) $row['joined_on']) : '',
         ];
@@ -137,7 +146,7 @@ try {
             'pages'    => (int) ceil($total / $perPage),
         ],
         'filters'    => [
-            'status'      => $status ?: null,
+            'status'      => $statuses ?: ($status ?: null),
             'category_id' => $categoryId ?: null,
             'board'       => $board,
             'year'        => $year ?: null,

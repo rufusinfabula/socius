@@ -546,3 +546,110 @@ function calculate_member_status(array $member, array $settings): string
 
     return 'lapsed';
 }
+
+/**
+ * Detect the current renewal period based on today's date
+ * and the social year cycle configured in settings.
+ *
+ * Uses the same social year and cross-year date logic as
+ * calculate_member_status().
+ *
+ * Periods:
+ *   'open'             → from renewal_open to first_reminder
+ *   'first_reminder'   → from first_reminder to second_reminder
+ *   'second_reminder'  → from second_reminder to third_reminder
+ *   'third_reminder'   → from third_reminder to renewal_close
+ *   'close'            → from renewal_close to lapse
+ *   'lapse'            → on or after lapse date
+ *   ''                 → outside renewal cycle
+ *
+ * @param array $settings Flat key→value settings array (dot-notation keys)
+ * @return string Period key or empty string
+ */
+function detect_current_period(array $settings): string
+{
+    $today = new DateTimeImmutable('today');
+
+    $openMmdd   = (string) ($settings['renewal.date_open']            ?? '11-15');
+    $firstMmdd  = (string) ($settings['renewal.date_first_reminder']  ?? '02-15');
+    $secondMmdd = (string) ($settings['renewal.date_second_reminder'] ?? '03-15');
+    $thirdMmdd  = (string) ($settings['renewal.date_third_reminder']  ?? '04-01');
+    $closeMmdd  = (string) ($settings['renewal.date_close']           ?? '04-15');
+    $lapseMmdd  = (string) ($settings['renewal.date_lapse']           ?? '12-31');
+
+    // Determine social year — same logic as calculate_member_status
+    $thisYear = (int) $today->format('Y');
+    [$lm, $ld] = explode('-', $lapseMmdd);
+    $lapseCheck = new DateTimeImmutable(
+        sprintf('%04d-%02d-%02d', $thisYear, (int) $lm, (int) $ld)
+    );
+    $socialYear = ($today > $lapseCheck) ? $thisYear + 1 : $thisYear;
+
+    // renewal_open year: if open MM-DD > close MM-DD → year before social year
+    $openYear = ($openMmdd > $closeMmdd) ? $socialYear - 1 : $socialYear;
+
+    $build = static function (string $mmdd, int $year): DateTimeImmutable {
+        [$m, $d] = explode('-', $mmdd);
+        return new DateTimeImmutable(
+            sprintf('%04d-%02d-%02d', $year, (int) $m, (int) $d)
+        );
+    };
+
+    $open   = $build($openMmdd,   $openYear);
+    $first  = $build($firstMmdd,  $socialYear);
+    $second = $build($secondMmdd, $socialYear);
+    $third  = $build($thirdMmdd,  $socialYear);
+    $close  = $build($closeMmdd,  $socialYear);
+    $lapse  = $build($lapseMmdd,  $socialYear);
+
+    if ($today >= $lapse)  return 'lapse';
+    if ($today >= $close)  return 'close';
+    if ($today >= $third)  return 'third_reminder';
+    if ($today >= $second) return 'second_reminder';
+    if ($today >= $first)  return 'first_reminder';
+    if ($today >= $open)   return 'open';
+
+    return '';
+}
+
+/**
+ * Get the theoretical start date for a given period
+ * in the current social year. Used for period_history.
+ *
+ * @param string $period   Period key
+ * @param array  $settings Flat key→value settings array
+ * @return string Y-m-d date string
+ */
+function get_period_start_date(string $period, array $settings): string
+{
+    $today    = new DateTimeImmutable('today');
+    $thisYear = (int) $today->format('Y');
+
+    $lapseMmdd = (string) ($settings['renewal.date_lapse'] ?? '12-31');
+    [$lm, $ld] = explode('-', $lapseMmdd);
+    $lapseCheck = new DateTimeImmutable(
+        sprintf('%04d-%02d-%02d', $thisYear, (int) $lm, (int) $ld)
+    );
+    $socialYear = ($today > $lapseCheck) ? $thisYear + 1 : $thisYear;
+
+    $openMmdd  = (string) ($settings['renewal.date_open']  ?? '11-15');
+    $closeMmdd = (string) ($settings['renewal.date_close'] ?? '04-15');
+    $openYear  = ($openMmdd > $closeMmdd) ? $socialYear - 1 : $socialYear;
+
+    $map = [
+        'open'             => [$openMmdd,                                               $openYear],
+        'first_reminder'   => [(string) ($settings['renewal.date_first_reminder']  ?? '02-15'), $socialYear],
+        'second_reminder'  => [(string) ($settings['renewal.date_second_reminder'] ?? '03-15'), $socialYear],
+        'third_reminder'   => [(string) ($settings['renewal.date_third_reminder']  ?? '04-01'), $socialYear],
+        'close'            => [$closeMmdd,                                              $socialYear],
+        'lapse'            => [$lapseMmdd,                                              $socialYear],
+    ];
+
+    if (!isset($map[$period])) {
+        return date('Y-m-d');
+    }
+
+    [$mmdd, $year] = $map[$period];
+    [$m, $d] = explode('-', $mmdd);
+    return sprintf('%04d-%02d-%02d', $year, (int) $m, (int) $d);
+}
