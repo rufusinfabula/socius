@@ -56,10 +56,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $title         = trim((string) ($_POST['title']          ?? ''));
     $subject       = trim((string) ($_POST['subject']        ?? ''));
     $bodyText      = trim((string) ($_POST['body_text']      ?? ''));
-    $format        = trim((string) ($_POST['format']         ?? 'text'));
-    $type          = trim((string) ($_POST['type']           ?? 'general'));
+    $format        = in_array(trim((string) ($_POST['format'] ?? 'text')), ['text', 'markdown'], true)
+                     ? trim((string) ($_POST['format'] ?? 'text')) : 'text';
+    $type          = in_array(trim((string) ($_POST['type'] ?? 'general')), ['general', 'renewal', 'board', 'direct'], true)
+                     ? trim((string) ($_POST['type'] ?? 'general')) : 'general';
     $renewalPeriod = trim((string) ($_POST['renewal_period'] ?? ''));
     $memberIds     = array_filter(array_map('intval', (array) ($_POST['member_ids'] ?? [])));
+
+    $bodyMd = ($format === 'markdown') ? $bodyText : null;
 
     if ($title === '') {
         $error = __('communications.error_title_required');
@@ -75,8 +79,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'title'          => $title,
                 'subject'        => $subject,
                 'body_text'      => $bodyText,
-                'format'         => in_array($format, ['text', 'markdown'], true) ? $format : 'text',
-                'type'           => in_array($type, ['general', 'renewal', 'board', 'direct'], true) ? $type : 'general',
+                'body_md'        => $bodyMd,
+                'format'         => $format,
+                'type'           => $type,
                 'renewal_period' => $renewalPeriod !== '' ? $renewalPeriod : null,
             ]);
 
@@ -89,7 +94,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             flash_set('success', __('communications.updated_ok'));
             redirect('communication.php?id=' . $id);
-        } catch (\Throwable) {
+        } catch (\Throwable $ex) {
+            error_log('[Socius] communication-edit update error: ' . $ex->getMessage());
             $error = __('communications.error_save_generic');
         }
     }

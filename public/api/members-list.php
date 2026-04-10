@@ -81,7 +81,14 @@ try {
     }
 
     if ($board) {
-        $where[] = 'm.is_board_member = 1';
+        $where[] = 'EXISTS (
+            SELECT 1 FROM board_memberships bm
+            JOIN board_roles br ON br.id = bm.role_id
+            WHERE bm.member_id = m.id
+              AND br.is_board_member = 1
+              AND (bm.expires_on IS NULL OR bm.expires_on >= CURDATE())
+              AND bm.resigned_on IS NULL
+        )';
     }
 
     if ($year > 0) {

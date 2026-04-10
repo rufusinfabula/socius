@@ -102,7 +102,11 @@ $content = (function () use (
                     </div>
 
                     <!-- Periodo rinnovo (visibile solo se tipo = renewal) -->
-                    <?php $currentType = (string) $v('type', 'general'); ?>
+                    <?php
+                    $currentType    = (string) $v('type', 'general');
+                    // Pre-select: saved value if available, otherwise current system period
+                    $selectedPeriod = (string) $v('renewal_period', '') ?: $currentPeriod;
+                    ?>
                     <div id="renewal-period-box"
                          class="uk-margin"
                          <?= $currentType !== 'renewal' ? 'style="display:none"' : '' ?>>
@@ -118,7 +122,7 @@ $content = (function () use (
                                 foreach ($periods as $per):
                                 ?>
                                 <option value="<?= $e($per) ?>"
-                                        <?= (string) $v('renewal_period', '') === $per ? 'selected' : '' ?>>
+                                        <?= $selectedPeriod === $per ? 'selected' : '' ?>>
                                     <?= $e(__('communications.period_' . $per)) ?>
                                 </option>
                                 <?php endforeach; ?>
@@ -521,6 +525,12 @@ $content = (function () use (
     function toggleRenewalPeriod(type) {
         const box = document.getElementById('renewal-period-box');
         box.style.display = (type === 'renewal') ? '' : 'none';
+        if (type === 'renewal') {
+            var periodSelect = document.getElementById('renewal_period');
+            if (periodSelect && periodSelect.value === '') {
+                periodSelect.value = '<?= $e($currentPeriod) ?>';
+            }
+        }
     }
 
     function loadTemplate() {

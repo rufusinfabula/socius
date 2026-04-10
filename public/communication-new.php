@@ -37,12 +37,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $title         = trim((string) ($_POST['title']          ?? ''));
     $subject       = trim((string) ($_POST['subject']        ?? ''));
     $bodyText      = trim((string) ($_POST['body_text']      ?? ''));
-    $format        = trim((string) ($_POST['format']         ?? 'text'));
-    $type          = trim((string) ($_POST['type']           ?? 'general'));
+    $format        = in_array(trim((string) ($_POST['format'] ?? 'text')), ['text', 'markdown'], true)
+                     ? trim((string) ($_POST['format'] ?? 'text')) : 'text';
+    $type          = in_array(trim((string) ($_POST['type'] ?? 'general')), ['general', 'renewal', 'board', 'direct'], true)
+                     ? trim((string) ($_POST['type'] ?? 'general')) : 'general';
     $renewalPeriod = trim((string) ($_POST['renewal_period'] ?? ''));
     $memberIds     = array_filter(array_map('intval', (array) ($_POST['member_ids'] ?? [])));
 
-    $formData = compact('title', 'subject', 'bodyText', 'format', 'type', 'renewalPeriod');
+    // body_md: stored separately when format = markdown
+    $bodyMd = ($format === 'markdown') ? $bodyText : null;
+
+    // Preserve keys matching the template's $v() accessors
+    $formData = [
+        'title'          => $title,
+        'subject'        => $subject,
+        'body_text'      => $bodyText,
+        'format'         => $format,
+        'type'           => $type,
+        'renewal_period' => $renewalPeriod,
+    ];
 
     // Validation
     if ($title === '') {
@@ -59,9 +72,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'title'          => $title,
                 'subject'        => $subject,
                 'body_text'      => $bodyText,
-                'format'         => in_array($format, ['text', 'markdown'], true) ? $format : 'text',
+                'body_md'        => $bodyMd,
+                'format'         => $format,
                 'status'         => 'draft',
-                'type'           => in_array($type, ['general', 'renewal', 'board', 'direct'], true) ? $type : 'general',
+                'type'           => $type,
                 'renewal_period' => $renewalPeriod !== '' ? $renewalPeriod : null,
                 'recipient_count'=> 0,
                 'created_by'     => (int) ($currentUser['id'] ?? 0),
@@ -74,7 +88,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             flash_set('success', __('communications.created_ok'));
             redirect('communication-edit.php?id=' . $newId);
-        } catch (\Throwable) {
+        } catch (\Throwable $ex) {
+            error_log('[Socius] communication-new create error: ' . $ex->getMessage());
             $error = __('communications.error_save_generic');
         }
     }
