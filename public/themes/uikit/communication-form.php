@@ -163,6 +163,8 @@ $content = (function () use (
                         <textarea id="body_text" name="body_text" class="uk-textarea"
                                   rows="10" required
                         ><?= $e($v('body_text')) ?></textarea>
+                        <input type="hidden" name="body_md" id="body_md_hidden"
+                               value="<?= $e($v('body_md')) ?>">
                         <p class="uk-text-small uk-text-muted uk-margin-small-top">
                             <strong><?= $e(__('communications.placeholders_available')) ?>:</strong>
                             [nome] [cognome] [nome_completo] [numero_socio] [numero_tessera]
@@ -552,6 +554,15 @@ $content = (function () use (
         return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;')
                           .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
     }
+
+    // Sync body_md hidden input before submit when format = markdown
+    document.getElementById('comm-form').addEventListener('submit', function() {
+        var fmtEl = document.querySelector('input[name="format"]:checked');
+        if (fmtEl && fmtEl.value === 'markdown') {
+            document.getElementById('body_md_hidden').value =
+                document.getElementById('body_text').value;
+        }
+    });
     </script>
 
     <?php

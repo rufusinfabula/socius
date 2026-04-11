@@ -55,7 +55,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $title         = trim((string) ($_POST['title']          ?? ''));
     $subject       = trim((string) ($_POST['subject']        ?? ''));
-    $bodyText      = trim((string) ($_POST['body_text']      ?? ''));
     $format        = in_array(trim((string) ($_POST['format'] ?? 'text')), ['text', 'markdown'], true)
                      ? trim((string) ($_POST['format'] ?? 'text')) : 'text';
     $type          = in_array(trim((string) ($_POST['type'] ?? 'general')), ['general', 'renewal', 'board', 'direct'], true)
@@ -63,7 +62,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $renewalPeriod = trim((string) ($_POST['renewal_period'] ?? ''));
     $memberIds     = array_filter(array_map('intval', (array) ($_POST['member_ids'] ?? [])));
 
-    $bodyMd = ($format === 'markdown') ? $bodyText : null;
+    // body_text comes from body_text (plain) or body_md (markdown) depending on format
+    if ($format === 'markdown') {
+        $bodyText = trim((string) ($_POST['body_md']   ?? ''));
+        $bodyMd   = $bodyText;
+    } else {
+        $bodyText = trim((string) ($_POST['body_text'] ?? ''));
+        $bodyMd   = null;
+    }
 
     if ($title === '') {
         $error = __('communications.error_title_required');
